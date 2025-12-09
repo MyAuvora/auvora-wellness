@@ -38,16 +38,20 @@ import {
   Star,
   Send,
   Target,
-  CreditCard,
   AlertTriangle,
   Info,
   MessageCircle,
   Bot
 } from 'lucide-react'
 
-type Page = 'landing' | 'demo'
 type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication'
 type PracticeType = 'chiropractic' | 'physical-therapy'
+
+interface ChatMessage {
+  id: number
+  role: 'user' | 'assistant'
+  content: string
+}
 
 // Sample data that changes based on practice type
 const getPracticeData = (type: PracticeType) => {
@@ -116,312 +120,7 @@ const getPracticeData = (type: PracticeType) => {
   }
 }
 
-const features = [
-  { icon: Calendar, title: 'AI Scheduling', desc: 'Auto-fill, optimize calendars, and predict no-shows' },
-  { icon: DollarSign, title: 'Automated Billing', desc: 'AI-driven coding, claims, and denials management' },
-  { icon: FileText, title: 'Smart Documentation', desc: 'Auto-generate SOAP notes and visit summaries' },
-  { icon: MessageSquare, title: 'Secure Communication', desc: 'Two-way messaging, reminders, and AI chat' },
-  { icon: Users, title: 'Patient Portal', desc: 'Intake forms, self-scheduling, and progress tracking' },
-  { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Practice performance, patient outcomes, and revenue insights' },
-  { icon: Bell, title: 'Task Automation', desc: 'Follow-ups, recall reminders, and birthday greetings' },
-  { icon: Activity, title: 'EHR/EMR Integrations', desc: 'Works with ChiroTouch, Jane, SimplePractice, WebPT, and more' },
-  { icon: CreditCard, title: 'Payment Processing', desc: 'Stripe, Square, PayPal integration' },
-  { icon: Mail, title: 'Marketing Automation', desc: 'AI campaigns, reactivation, and reputation management' },
-  { icon: Video, title: 'Telehealth Integration', desc: 'One-click video visits and secure file sharing' },
-  { icon: Bot, title: 'AI Business Assistant', desc: 'Your 24/7 AI practice manager for business optimization' },
-]
-
-type ComparisonValue = boolean | 'partial'
-
-const comparisonData: { feature: string; auvora: ComparisonValue; chiroTouch: ComparisonValue; jane: ComparisonValue; simplePractice: ComparisonValue; webPT: ComparisonValue }[] = [
-  { feature: 'Fully AI-Driven', auvora: true, chiroTouch: false, jane: false, simplePractice: false, webPT: false },
-  { feature: 'HIPAA Compliance', auvora: true, chiroTouch: true, jane: true, simplePractice: true, webPT: true },
-  { feature: 'Modern UI/UX', auvora: true, chiroTouch: false, jane: true, simplePractice: true, webPT: false },
-  { feature: 'Automated Documentation', auvora: true, chiroTouch: false, jane: false, simplePractice: false, webPT: false },
-  { feature: 'Predictive Analytics', auvora: true, chiroTouch: false, jane: false, simplePractice: false, webPT: false },
-  { feature: 'Marketing Automation', auvora: true, chiroTouch: false, jane: 'partial', simplePractice: false, webPT: false },
-  { feature: 'Telehealth & EHR Integrations', auvora: true, chiroTouch: 'partial', jane: true, simplePractice: true, webPT: 'partial' },
-  { feature: 'Patient Self-Service Portal', auvora: true, chiroTouch: false, jane: true, simplePractice: true, webPT: 'partial' },
-  { feature: 'AI Business Assistant', auvora: true, chiroTouch: false, jane: false, simplePractice: false, webPT: false },
-  { feature: 'Business Optimization Focus', auvora: true, chiroTouch: 'partial', jane: false, simplePractice: false, webPT: 'partial' },
-]
-
-const howItWorks = [
-  { step: 1, title: 'Log In', desc: 'Branded dashboard welcomes you with a daily summary and actionable AI insights.' },
-  { step: 2, title: 'AI-Powered Scheduling', desc: 'Drag-and-drop calendar with AI suggestions to fill gaps and reduce no-shows.' },
-  { step: 3, title: 'Patient Visit', desc: 'AI summarizes patient history and auto-generates documentation. Providers review, edit, and sign in one click.' },
-  { step: 4, title: 'Automated Billing', desc: 'AI codes visits, submits claims, and flags issues for review.' },
-  { step: 5, title: 'Patient Communication', desc: 'Automated follow-ups, reminders, and secure portal access for patients.' },
-  { step: 6, title: 'Analytics', desc: 'Real-time dashboard shows hours saved, revenue growth, and patient satisfaction.' },
-  { step: 7, title: 'Compliance', desc: 'Audit logs and access controls ensure HIPAA compliance at every step.' },
-]
-
-function LandingPage({ onStartDemo }: { onStartDemo: () => void }) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Auvora Wellness
-              </span>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-slate-600 hover:text-indigo-600 transition-colors">Features</a>
-              <a href="#how-it-works" className="text-slate-600 hover:text-indigo-600 transition-colors">How It Works</a>
-              <a href="#comparison" className="text-slate-600 hover:text-indigo-600 transition-colors">Compare</a>
-              <Button onClick={onStartDemo} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
-                Try Demo
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-6 bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
-              <Sparkles className="w-3 h-3 mr-1" /> AI-Powered Healthcare CRM
-            </Badge>
-            <h1 className="text-5xl md:text-6xl font-bold text-slate-900 mb-6 leading-tight">
-              Finally, a CRM that works{' '}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                as hard as you do.
-              </span>
-            </h1>
-            <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-              Auvora Wellness is the all-in-one, AI-powered CRM for chiropractors and physical therapists. 
-              Automate your admin, delight your patients, and grow your practice.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button 
-                size="lg" 
-                onClick={onStartDemo}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-lg px-8 py-6"
-              >
-                Demo Auvora Wellness Now <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6">
-                See How Much You'll Save
-              </Button>
-            </div>
-            
-            {/* Value Props */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 max-w-4xl mx-auto">
-              {[
-                { icon: Shield, text: 'HIPAA Compliant' },
-                { icon: Brain, text: 'AI-Driven' },
-                { icon: Bell, text: 'Auto Reminders' },
-                { icon: Activity, text: 'EHR Integration' },
-                { icon: BarChart3, text: 'Real-time Analytics' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-center gap-2 text-slate-600 bg-white/60 rounded-lg py-3 px-4">
-                  <item.icon className="w-4 h-4 text-indigo-600" />
-                  <span className="text-sm font-medium">{item.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-purple-100 text-purple-700 hover:bg-purple-100">Features</Badge>
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              Comprehensive, AI-Powered Features
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Everything you need to run a modern healthcare practice, powered by artificial intelligence.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, i) => (
-              <Card key={i} className="border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300">
-                <CardHeader>
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mb-4">
-                    <feature.icon className="w-6 h-6 text-indigo-600" />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
-                  <CardDescription>{feature.desc}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-indigo-100 text-indigo-700 hover:bg-indigo-100">How It Works</Badge>
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              Streamlined Workflow, Powered by AI
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {howItWorks.slice(0, 4).map((item) => (
-              <div key={item.step} className="relative">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 h-full">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold mb-4">
-                    {item.step}
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
-                  <p className="text-slate-600 text-sm">{item.desc}</p>
-                </div>
-                {item.step < 4 && (
-                  <ChevronRight className="hidden lg:block absolute top-1/2 -right-3 w-6 h-6 text-indigo-400 transform -translate-y-1/2" />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-            {howItWorks.slice(4).map((item) => (
-              <div key={item.step} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold mb-4">
-                  {item.step}
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-slate-600 text-sm">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Section */}
-      <section id="comparison" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-green-100 text-green-700 hover:bg-green-100">Comparison</Badge>
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              See How We Compare
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Auvora Wellness leads the industry with comprehensive AI-powered features and business optimization focus.
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b-2 border-slate-200">
-                  <th className="text-left py-4 px-4 font-semibold text-slate-900">Feature</th>
-                  <th className="text-center py-4 px-4 font-semibold text-indigo-600 bg-indigo-50 rounded-t-lg">Auvora Wellness</th>
-                  <th className="text-center py-4 px-4 font-semibold text-slate-600">ChiroTouch</th>
-                  <th className="text-center py-4 px-4 font-semibold text-slate-600">Jane</th>
-                  <th className="text-center py-4 px-4 font-semibold text-slate-600">SimplePractice</th>
-                  <th className="text-center py-4 px-4 font-semibold text-slate-600">WebPT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonData.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-100">
-                    <td className="py-4 px-4 text-slate-700">{row.feature}</td>
-                    <td className="py-4 px-4 text-center bg-indigo-50">
-                      {row.auvora === true ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto" />
-                      ) : row.auvora === 'partial' ? (
-                        <span className="text-yellow-600 text-sm">Partial</span>
-                      ) : (
-                        <XCircle className="w-6 h-6 text-slate-300 mx-auto" />
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {row.chiroTouch === true ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto" />
-                      ) : row.chiroTouch === 'partial' ? (
-                        <span className="text-yellow-600 text-sm">Partial</span>
-                      ) : (
-                        <XCircle className="w-6 h-6 text-slate-300 mx-auto" />
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {row.jane === true ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto" />
-                      ) : row.jane === 'partial' ? (
-                        <span className="text-yellow-600 text-sm">Partial</span>
-                      ) : (
-                        <XCircle className="w-6 h-6 text-slate-300 mx-auto" />
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {row.simplePractice === true ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto" />
-                      ) : row.simplePractice === 'partial' ? (
-                        <span className="text-yellow-600 text-sm">Partial</span>
-                      ) : (
-                        <XCircle className="w-6 h-6 text-slate-300 mx-auto" />
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-center">
-                      {row.webPT === true ? (
-                        <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto" />
-                      ) : row.webPT === 'partial' ? (
-                        <span className="text-yellow-600 text-sm">Partial</span>
-                      ) : (
-                        <XCircle className="w-6 h-6 text-slate-300 mx-auto" />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-indigo-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Transform Your Practice?
-          </h2>
-          <p className="text-xl text-indigo-100 mb-8">
-            See how much time and money you'll save with Auvora Wellness.
-          </p>
-          <Button 
-            size="lg" 
-            onClick={onStartDemo}
-            className="bg-white text-indigo-600 hover:bg-indigo-50 text-lg px-8 py-6"
-          >
-            Start Your Free Demo <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 px-4 sm:px-6 lg:px-8 bg-slate-900 text-slate-400">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-              <Heart className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-white">Auvora Wellness</span>
-          </div>
-          <p className="text-sm text-center md:text-left">
-            Auvora Wellness is a division of Auvora. 2025. All rights reserved. HIPAA compliant. For demo purposes only.
-          </p>
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4" />
-            <span className="text-sm">HIPAA Compliant</span>
-          </div>
-        </div>
-      </footer>
-    </div>
-  )
-}
-
-function DemoApp({ onBackToLanding }: { onBackToLanding: () => void }) {
+function DemoApp() {
   const [practiceType, setPracticeType] = useState<PracticeType>('chiropractic')
   const [currentView, setCurrentView] = useState<DemoView>('dashboard')
   const [showAIAssistant, setShowAIAssistant] = useState(false)
@@ -442,7 +141,7 @@ function DemoApp({ onBackToLanding }: { onBackToLanding: () => void }) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* Demo Header */}
+      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-4">
@@ -476,7 +175,7 @@ function DemoApp({ onBackToLanding }: { onBackToLanding: () => void }) {
               onClick={() => setShowAIAssistant(!showAIAssistant)}
             >
               <Bot className="w-4 h-4 mr-2" />
-              AI Assistant
+              Ask Auvora
             </Button>
             <Button variant="ghost" size="sm" className="text-slate-600">
               <Bell className="w-4 h-4 mr-2" />
@@ -495,9 +194,6 @@ function DemoApp({ onBackToLanding }: { onBackToLanding: () => void }) {
                 {practiceType === 'chiropractic' ? 'Dr. Jamie Smith' : 'Dr. Alex Morgan'}
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={onBackToLanding} className="text-slate-600">
-              <LogOut className="w-4 h-4 mr-2" /> Exit Demo
-            </Button>
           </div>
         </div>
       </header>
@@ -591,14 +287,15 @@ function DemoApp({ onBackToLanding }: { onBackToLanding: () => void }) {
             />
           )}
 
-          {/* AI Assistant Sidebar */}
-          {showAIAssistant && (
-            <AIAssistantPanel 
-              practiceType={practiceType}
-              practiceData={practiceData}
-              onClose={() => setShowAIAssistant(false)}
-            />
-          )}
+                    {/* AI Assistant Sidebar */}
+                    {showAIAssistant && (
+                      <AIAssistantPanel 
+                        practiceType={practiceType}
+                        practiceData={practiceData}
+                        onClose={() => setShowAIAssistant(false)}
+                        onNavigate={setCurrentView}
+                      />
+                    )}
         </main>
       </div>
     </div>
@@ -657,29 +354,33 @@ function DashboardView({
         </CardContent>
       </Card>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Today\'s Appointments', value: '5', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Pending Claims', value: '3', icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Unread Messages', value: '7', icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-50' },
-          { label: 'AI Suggestions', value: '4', icon: Sparkles, color: 'text-orange-600', bg: 'bg-orange-50' },
-        ].map((stat, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">{stat.label}</p>
-                  <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
-                </div>
-                <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Today\'s Appointments', value: '5', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50', view: 'scheduling' as DemoView },
+                { label: 'Pending Claims', value: '3', icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50', view: 'billing' as DemoView },
+                { label: 'Unread Messages', value: '7', icon: MessageSquare, color: 'text-purple-600', bg: 'bg-purple-50', view: 'communication' as DemoView },
+                { label: 'AI Suggestions', value: '4', icon: Sparkles, color: 'text-orange-600', bg: 'bg-orange-50', view: 'analytics' as DemoView },
+              ].map((stat, i) => (
+                <Card 
+                  key={i} 
+                  className="cursor-pointer hover:shadow-lg hover:border-indigo-300 transition-all duration-200"
+                  onClick={() => onNavigate(stat.view)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-slate-500">{stat.label}</p>
+                        <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+                      </div>
+                      <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center`}>
+                        <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
       {/* Today's Schedule & Patients */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1742,20 +1443,113 @@ function ComplianceView({
 function AIAssistantPanel({
   practiceType,
   practiceData,
-  onClose
+  onClose,
+  onNavigate
 }: {
   practiceType: PracticeType
   practiceData: ReturnType<typeof getPracticeData>
   onClose: () => void
+  onNavigate: (view: DemoView) => void
 }) {
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 1,
+      role: 'assistant',
+      content: `Hi! I'm Auvora, your AI Business Assistant for ${practiceData.practiceName}. I can answer any questions about your practice - scheduling, billing, patients, revenue, compliance, and more. What would you like to know?`
+    }
+  ])
+  const [inputValue, setInputValue] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+
+  const getAIResponse = (question: string): string => {
+    const q = question.toLowerCase()
+    const doctorName = practiceType === 'chiropractic' ? 'Dr. Jamie Smith' : 'Dr. Alex Morgan'
+    
+    if (q.includes('revenue') || q.includes('money') || q.includes('income') || q.includes('earnings')) {
+      return `Based on your practice data, ${practiceData.practiceName} has generated $47,850 in revenue this month, which is 12% higher than last month. Your average revenue per patient visit is $${practiceType === 'chiropractic' ? '85' : '95'}. I've identified 12 patients due for ${practiceType === 'chiropractic' ? 'wellness visits' : 're-evaluation'} representing $1,440 in potential additional revenue. Would you like me to send them appointment reminders?`
+    }
+    if (q.includes('appointment') || q.includes('schedule') || q.includes('today') || q.includes('calendar')) {
+      return `You have 5 appointments scheduled for today:\n\n• 9:00 AM - ${practiceData.todayAppointments[0].patient} (${practiceData.todayAppointments[0].type})\n• 10:30 AM - ${practiceData.todayAppointments[1].patient} (${practiceData.todayAppointments[1].type})\n• 11:00 AM - ${practiceData.todayAppointments[2].patient} (${practiceData.todayAppointments[2].type})\n• 2:00 PM - ${practiceData.todayAppointments[3].patient} (${practiceData.todayAppointments[3].type})\n• 3:30 PM - ${practiceData.todayAppointments[4].patient} (${practiceData.todayAppointments[4].type})\n\nI noticed a 1-hour gap at 1:00 PM. Would you like me to auto-fill it with a patient who's overdue?`
+    }
+    if (q.includes('patient') || q.includes('how many')) {
+      return `${practiceData.practiceName} currently has 247 active patients. This month you've seen 89 patients across 156 visits. Your patient retention rate is 94%, which is excellent! 5 patients are flagged for follow-up: ${practiceData.samplePatients.map(p => p.name).join(', ')}. Would you like me to send them personalized outreach?`
+    }
+    if (q.includes('claim') || q.includes('billing') || q.includes('insurance') || q.includes('denied')) {
+      return `You have 3 pending claims totaling $2,450. 1 claim for ${practiceData.samplePatients[1].name} was denied due to a coding issue - the wrong modifier was used. I can help you correct and resubmit it. Your claim acceptance rate is 96%, and average days to payment is 18 days. Would you like me to review the denied claim?`
+    }
+    if (q.includes('no-show') || q.includes('cancel') || q.includes('miss')) {
+      return `Your no-show rate this month is 4.2%, down from 6.1% last month - great improvement! The AI reminder system has reduced no-shows by 32%. ${practiceData.samplePatients[1].name} missed their last appointment. I recommend sending a personalized reactivation message. Should I draft one?`
+    }
+    if (q.includes('staff') || q.includes('team') || q.includes('employee')) {
+      return `${practiceData.practiceName} has 4 staff members: ${doctorName} (Provider), Sarah (Front Desk), Mike (Billing Specialist), and Lisa (${practiceType === 'chiropractic' ? 'Chiropractic Assistant' : 'PT Assistant'}). Staff productivity is up 15% since implementing Auvora. Would you like to see individual performance metrics?`
+    }
+    if (q.includes('compliance') || q.includes('hipaa') || q.includes('audit') || q.includes('security')) {
+      return `Your practice is fully HIPAA compliant. Last audit: 30 days ago with 0 violations. All 247 patient records are encrypted and access-controlled. 4 staff members have completed annual HIPAA training. Your next compliance review is scheduled for January 15th. Would you like me to generate a compliance report?`
+    }
+    if (q.includes('marketing') || q.includes('new patient') || q.includes('growth') || q.includes('attract')) {
+      return `This month you've acquired 8 new patients, primarily from Google (4), referrals (3), and social media (1). Your Google rating is 4.9 stars with 127 reviews. I can help you launch a reactivation campaign targeting 23 inactive patients or a referral incentive program. Which would you prefer?`
+    }
+    if (q.includes('best') || q.includes('top') || q.includes('performing')) {
+      return `Your top performing metrics:\n• Best day: Tuesdays (avg 12 patients)\n• Most profitable service: ${practiceType === 'chiropractic' ? 'New Patient Exams ($195 avg)' : 'Initial Evaluations ($225 avg)'}\n• Highest retention: ${practiceType === 'chiropractic' ? 'Wellness Care patients (98%)' : 'Post-op rehab patients (97%)'}\n• Best referral source: Existing patients (34%)\n\nWould you like detailed analytics on any of these?`
+    }
+    if (q.includes('help') || q.includes('what can you do') || q.includes('capabilities')) {
+      return `I can help you with:\n\n📊 **Business Analytics** - Revenue, patient counts, trends\n📅 **Scheduling** - Optimize calendar, fill gaps, reduce no-shows\n💰 **Billing** - Claims status, denials, coding assistance\n👥 **Patients** - Profiles, follow-ups, reactivation\n📧 **Communication** - Draft messages, campaigns, reminders\n✅ **Compliance** - HIPAA status, audits, security\n📈 **Growth** - Marketing, new patients, referrals\n\nJust ask me anything about your practice!`
+    }
+    
+    return `Great question! Based on ${practiceData.practiceName}'s data, I can provide detailed insights on that. Your practice is performing well with 247 active patients, $47,850 monthly revenue, and a 94% retention rate. Is there a specific aspect you'd like me to dive deeper into - scheduling, billing, patient care, or growth opportunities?`
+  }
+
+  const handleSendMessage = () => {
+    if (!inputValue.trim()) return
+    
+    const userMessage: ChatMessage = {
+      id: chatMessages.length + 1,
+      role: 'user',
+      content: inputValue
+    }
+    setChatMessages(prev => [...prev, userMessage])
+    setInputValue('')
+    setIsTyping(true)
+    
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: chatMessages.length + 2,
+        role: 'assistant',
+        content: getAIResponse(inputValue)
+      }
+      setChatMessages(prev => [...prev, aiResponse])
+      setIsTyping(false)
+    }, 1000)
+  }
+
+  const handleQuickAction = (action: string) => {
+    const userMessage: ChatMessage = {
+      id: chatMessages.length + 1,
+      role: 'user',
+      content: action
+    }
+    setChatMessages(prev => [...prev, userMessage])
+    setIsTyping(true)
+    
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: chatMessages.length + 2,
+        role: 'assistant',
+        content: getAIResponse(action)
+      }
+      setChatMessages(prev => [...prev, aiResponse])
+      setIsTyping(false)
+    }, 1000)
+  }
+
   return (
     <div className="fixed right-0 top-16 bottom-0 w-96 bg-white border-l border-slate-200 shadow-2xl z-40 flex flex-col">
       <div className={`bg-gradient-to-r ${practiceData.practiceColor} text-white p-4 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <Bot className="w-6 h-6" />
           <div>
-            <h3 className="font-bold">AI Business Assistant</h3>
-            <p className="text-xs opacity-90">Your 24/7 practice optimization partner</p>
+            <h3 className="font-bold">Ask Auvora</h3>
+            <p className="text-xs opacity-90">Your AI Business Assistant</p>
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20">
@@ -1764,78 +1558,124 @@ function AIAssistantPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* AI Greeting */}
-        <div className="flex gap-3">
-          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${practiceData.practiceColor} flex items-center justify-center flex-shrink-0`}>
-            <Bot className="w-5 h-5 text-white" />
+        {/* Chat Messages */}
+        {chatMessages.map((message) => (
+          <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            {message.role === 'assistant' && (
+              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${practiceData.practiceColor} flex items-center justify-center flex-shrink-0`}>
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+            )}
+            <div className={`flex-1 rounded-lg p-3 ${message.role === 'user' ? 'bg-indigo-600 text-white ml-8' : 'bg-slate-100'}`}>
+              <p className={`text-sm whitespace-pre-line ${message.role === 'user' ? 'text-white' : 'text-slate-700'}`}>
+                {message.content}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 bg-slate-100 rounded-lg p-3">
-            <p className="text-sm text-slate-700">
-              Hi! I'm your AI Business Assistant. I can help you with scheduling optimization, billing questions, 
-              patient communication, and business insights. What would you like to know?
-            </p>
+        ))}
+        
+        {isTyping && (
+          <div className="flex gap-3">
+            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${practiceData.practiceColor} flex items-center justify-center flex-shrink-0`}>
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <div className="bg-slate-100 rounded-lg p-3">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Quick Actions */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-slate-500 uppercase">Quick Actions</p>
-          <Button variant="outline" className="w-full justify-start text-left h-auto py-3">
-            <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="text-sm">Optimize today's schedule</span>
-          </Button>
-          <Button variant="outline" className="w-full justify-start text-left h-auto py-3">
-            <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="text-sm">Review pending claims</span>
-          </Button>
-          <Button variant="outline" className="w-full justify-start text-left h-auto py-3">
-            <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="text-sm">Draft reactivation campaign</span>
-          </Button>
-          <Button variant="outline" className="w-full justify-start text-left h-auto py-3">
-            <BarChart3 className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="text-sm">Generate weekly report</span>
-          </Button>
-        </div>
+        {/* Quick Actions - only show if few messages */}
+        {chatMessages.length <= 2 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-slate-500 uppercase">Quick Questions</p>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-left h-auto py-3"
+              onClick={() => handleQuickAction("What's my revenue this month?")}
+            >
+              <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">What's my revenue this month?</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-left h-auto py-3"
+              onClick={() => handleQuickAction("Show me today's schedule")}
+            >
+              <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Show me today's schedule</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-left h-auto py-3"
+              onClick={() => handleQuickAction("Any billing issues I should know about?")}
+            >
+              <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">Any billing issues I should know about?</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-left h-auto py-3"
+              onClick={() => handleQuickAction("How can I grow my practice?")}
+            >
+              <TrendingUp className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="text-sm">How can I grow my practice?</span>
+            </Button>
+          </div>
+        )}
 
-        {/* AI Insights */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-slate-500 uppercase">Today's Insights</p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900">Schedule Gap Detected</p>
-                <p className="text-xs text-blue-700 mt-1">
-                  You have a 1-hour gap at 1:00 PM. I can auto-schedule a patient who's overdue for a visit.
-                </p>
+        {/* Today's Insights */}
+        {chatMessages.length <= 2 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-slate-500 uppercase">Today's Insights</p>
+            <div 
+              className="bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer hover:bg-blue-100 transition-colors"
+              onClick={() => onNavigate('scheduling')}
+            >
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Schedule Gap Detected</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    You have a 1-hour gap at 1:00 PM. Click to view schedule.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div 
+              className="bg-green-50 border border-green-200 rounded-lg p-3 cursor-pointer hover:bg-green-100 transition-colors"
+              onClick={() => onNavigate('analytics')}
+            >
+              <div className="flex items-start gap-2">
+                <TrendingUp className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-green-900">Revenue Opportunity</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    12 patients due for {practiceType === 'chiropractic' ? 'wellness visits' : 're-evaluation'}. Click to view.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div 
+              className="bg-orange-50 border border-orange-200 rounded-lg p-3 cursor-pointer hover:bg-orange-100 transition-colors"
+              onClick={() => onNavigate('billing')}
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-orange-900">Claim Attention Needed</p>
+                  <p className="text-xs text-orange-700 mt-1">
+                    1 claim was denied. Click to review.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <TrendingUp className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-green-900">Revenue Opportunity</p>
-                <p className="text-xs text-green-700 mt-1">
-                  12 patients are due for {practiceType === 'chiropractic' ? 'wellness visits' : 're-evaluation'}. 
-                  Potential revenue: $1,440
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-orange-900">Claim Attention Needed</p>
-                <p className="text-xs text-orange-700 mt-1">
-                  1 claim was denied. I've identified the issue and can help you resubmit.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Input Area */}
@@ -1843,10 +1683,16 @@ function AIAssistantPanel({
         <div className="flex gap-2">
           <input 
             type="text" 
-            placeholder="Ask me anything..." 
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Ask Auvora anything about your business..." 
             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          <Button className={`bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
+          <Button 
+            onClick={handleSendMessage}
+            className={`bg-gradient-to-r ${practiceData.practiceColor} text-white`}
+          >
             <Send className="w-4 h-4" />
           </Button>
         </div>
@@ -1856,18 +1702,7 @@ function AIAssistantPanel({
 }
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('landing')
-
-  return (
-    <>
-      {currentPage === 'landing' && (
-        <LandingPage onStartDemo={() => setCurrentPage('demo')} />
-      )}
-      {currentPage === 'demo' && (
-        <DemoApp onBackToLanding={() => setCurrentPage('landing')} />
-      )}
-    </>
-  )
+  return <DemoApp />
 }
 
 export default App
