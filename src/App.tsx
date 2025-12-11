@@ -18,8 +18,7 @@ import {
   BarChart3, 
   Shield, 
   CheckCircle2, 
-  XCircle, 
-  ArrowRight, 
+  ArrowRight,
   Sparkles,
   Video,
   Mail,
@@ -41,7 +40,14 @@ import {
   AlertTriangle,
   Info,
   MessageCircle,
-  Bot
+  Bot,
+  FolderOpen,
+  Image,
+  Upload,
+  Download,
+  Eye,
+  File,
+  X
 } from 'lucide-react'
 
 type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication'
@@ -167,23 +173,14 @@ function DemoApp() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className={`text-slate-600 ${showAIAssistant ? 'bg-indigo-50 text-indigo-600' : ''}`}
-              onClick={() => setShowAIAssistant(!showAIAssistant)}
-            >
-              <Bot className="w-4 h-4 mr-2" />
-              Ask Auvora
-            </Button>
-            <Button variant="ghost" size="sm" className="text-slate-600">
-              <Bell className="w-4 h-4 mr-2" />
-              <Badge className="bg-red-500 text-white text-xs">3</Badge>
-            </Button>
-            <Button variant="ghost" size="sm" className="text-slate-600">
-              <Settings className="w-4 h-4" />
-            </Button>
+                    <div className="flex items-center gap-4">
+                      <Button variant="ghost" size="sm" className="text-slate-600">
+                        <Bell className="w-4 h-4 mr-2" />
+                        <Badge className="bg-red-500 text-white text-xs">3</Badge>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-slate-600">
+                        <Settings className="w-4 h-4" />
+                      </Button>
             <div className="flex items-center gap-2 pl-4 border-l border-slate-200">
               <Avatar className="w-8 h-8">
                 <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white`}>
@@ -287,17 +284,34 @@ function DemoApp() {
             />
           )}
 
-                    {/* AI Assistant Sidebar */}
-                    {showAIAssistant && (
-                      <AIAssistantPanel 
-                        practiceType={practiceType}
-                        practiceData={practiceData}
-                        onClose={() => setShowAIAssistant(false)}
-                        onNavigate={setCurrentView}
-                      />
-                    )}
-        </main>
+                            </main>
       </div>
+
+      {/* Floating Ask Auvora Button */}
+      <button
+        onClick={() => setShowAIAssistant(!showAIAssistant)}
+        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-50 ${
+          showAIAssistant 
+            ? 'bg-slate-600 hover:bg-slate-700' 
+            : `bg-gradient-to-r ${practiceData.practiceColor} hover:shadow-xl`
+        }`}
+      >
+        {showAIAssistant ? (
+          <X className="w-6 h-6 text-white" />
+        ) : (
+          <Bot className="w-6 h-6 text-white" />
+        )}
+      </button>
+
+      {/* AI Assistant Panel - Floating */}
+      {showAIAssistant && (
+        <AIAssistantPanel 
+          practiceType={practiceType}
+          practiceData={practiceData}
+          onClose={() => setShowAIAssistant(false)}
+          onNavigate={setCurrentView}
+        />
+      )}
     </div>
   )
 }
@@ -864,6 +878,190 @@ function PatientView({
           </div>
         </CardContent>
       </Card>
+
+      {/* Documents & Forms Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-indigo-600" />
+                Documents & Forms
+              </div>
+              <Button variant="outline" size="sm">
+                <Upload className="w-4 h-4 mr-2" /> Upload
+              </Button>
+            </CardTitle>
+            <CardDescription>Patient intake forms, consent documents, and records</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {patient.intakeComplete ? (
+                <>
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <File className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">Patient Intake Form</p>
+                        <p className="text-sm text-slate-500">Completed Nov 8, 2024</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                        <File className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">HIPAA Consent Form</p>
+                        <p className="text-sm text-slate-500">Signed Nov 8, 2024</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <File className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">Insurance Information</p>
+                        <p className="text-sm text-slate-500">Updated Nov 15, 2024</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                  {practiceType === 'physical-therapy' && (
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                          <File className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">Physician Referral</p>
+                          <p className="text-sm text-slate-500">Received Nov 5, 2024</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-6">
+                  <FolderOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500 mb-3">No documents uploaded yet</p>
+                  <Button variant="outline" size="sm">
+                    <Upload className="w-4 h-4 mr-2" /> Upload Documents
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Imaging Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Image className="w-5 h-5 text-indigo-600" />
+                Imaging & Diagnostics
+              </div>
+              <Button variant="outline" size="sm">
+                <Upload className="w-4 h-4 mr-2" /> Upload
+              </Button>
+            </CardTitle>
+            <CardDescription>X-rays, MRIs, CT scans, and other diagnostic images</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {patient.status !== 'New Patient' ? (
+                <>
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-16 h-16 rounded-lg bg-slate-200 flex items-center justify-center overflow-hidden">
+                        <Image className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">
+                          {practiceType === 'chiropractic' ? 'Lumbar X-Ray (AP/Lateral)' : 'Knee MRI'}
+                        </p>
+                        <p className="text-sm text-slate-500">Nov 8, 2024</p>
+                        <Badge className="mt-1 bg-blue-100 text-blue-700 text-xs">
+                          {practiceType === 'chiropractic' ? '2 images' : '24 slices'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                  {practiceType === 'chiropractic' && (
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 h-16 rounded-lg bg-slate-200 flex items-center justify-center overflow-hidden">
+                          <Image className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">Cervical X-Ray (Lateral)</p>
+                          <p className="text-sm text-slate-500">Nov 8, 2024</p>
+                          <Badge className="mt-1 bg-blue-100 text-blue-700 text-xs">1 image</Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  )}
+                  {practiceType === 'physical-therapy' && (
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 h-16 rounded-lg bg-slate-200 flex items-center justify-center overflow-hidden">
+                          <Image className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">Post-Op X-Ray</p>
+                          <p className="text-sm text-slate-500">Oct 25, 2024</p>
+                          <Badge className="mt-1 bg-green-100 text-green-700 text-xs">Surgical clearance</Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-6">
+                  <Image className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500 mb-3">No imaging files uploaded yet</p>
+                  <Button variant="outline" size="sm">
+                    <Upload className="w-4 h-4 mr-2" /> Upload Images
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
@@ -1542,20 +1740,20 @@ function AIAssistantPanel({
     }, 1000)
   }
 
-  return (
-    <div className="fixed right-0 top-16 bottom-0 w-96 bg-white border-l border-slate-200 shadow-2xl z-40 flex flex-col">
-      <div className={`bg-gradient-to-r ${practiceData.practiceColor} text-white p-4 flex items-center justify-between`}>
-        <div className="flex items-center gap-2">
-          <Bot className="w-6 h-6" />
-          <div>
-            <h3 className="font-bold">Ask Auvora</h3>
-            <p className="text-xs opacity-90">Your AI Business Assistant</p>
+    return (
+      <div className="fixed right-6 bottom-24 w-96 h-[500px] bg-white rounded-2xl shadow-2xl z-40 flex flex-col overflow-hidden border border-slate-200">
+        <div className={`bg-gradient-to-r ${practiceData.practiceColor} text-white p-4 flex items-center justify-between`}>
+          <div className="flex items-center gap-2">
+            <Bot className="w-6 h-6" />
+            <div>
+              <h3 className="font-bold">Ask Auvora</h3>
+              <p className="text-xs opacity-90">Your AI Business Assistant</p>
+            </div>
           </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20">
+            <X className="w-5 h-5" />
+          </Button>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20">
-          <XCircle className="w-5 h-5" />
-        </Button>
-      </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Chat Messages */}
