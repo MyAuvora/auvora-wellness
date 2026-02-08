@@ -746,7 +746,46 @@ function SchedulingView({
   practiceData: ReturnType<typeof getPracticeData>
   onSelectPatient: (name: string) => void
 }) {
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
   const timeSlots = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM']
+  
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const weekDates = ['Feb 3', 'Feb 4', 'Feb 5', 'Feb 6', 'Feb 7', 'Feb 8', 'Feb 9']
+  
+  const weeklyAppointments: Record<string, { time: string; patient: string; type: string }[]> = {
+    'Mon': [
+      { time: '9:00 AM', patient: 'John Doe', type: 'New Patient' },
+      { time: '11:00 AM', patient: 'Maria Lopez', type: 'Adjustment' },
+      { time: '2:00 PM', patient: 'Lisa Patel', type: 'Telehealth' },
+    ],
+    'Tue': [
+      { time: '8:00 AM', patient: 'Mark Chen', type: 'Adjustment' },
+      { time: '10:00 AM', patient: 'Brian Evans', type: 'Follow-up' },
+      { time: '3:00 PM', patient: 'Sarah Kim', type: 'New Patient' },
+    ],
+    'Wed': [
+      { time: '9:00 AM', patient: 'John Doe', type: 'Follow-up' },
+      { time: '1:00 PM', patient: 'Maria Lopez', type: 'Adjustment' },
+    ],
+    'Thu': [
+      { time: '10:00 AM', patient: 'Lisa Patel', type: 'Adjustment' },
+      { time: '2:00 PM', patient: 'Mark Chen', type: 'Adjustment' },
+      { time: '4:00 PM', patient: 'Brian Evans', type: 'Adjustment' },
+    ],
+    'Fri': [
+      { time: '8:00 AM', patient: 'Sarah Kim', type: 'Follow-up' },
+      { time: '11:00 AM', patient: 'John Doe', type: 'Adjustment' },
+      { time: '3:00 PM', patient: 'Maria Lopez', type: 'Adjustment' },
+    ],
+    'Sat': [],
+    'Sun': [],
+  }
+
+  const monthDays = Array.from({ length: 28 }, (_, i) => i + 1)
+  const monthAppointmentCounts: Record<number, number> = {
+    3: 5, 4: 3, 5: 4, 6: 6, 7: 2, 10: 4, 11: 5, 12: 3, 13: 4, 14: 2,
+    17: 6, 18: 4, 19: 5, 20: 3, 21: 2, 24: 4, 25: 5, 26: 3, 27: 4, 28: 2
+  }
   
   return (
     <div className="space-y-6">
@@ -756,6 +795,26 @@ function SchedulingView({
           <p className="text-slate-500">Drag-and-drop calendar with AI suggestions to fill gaps and reduce no-shows</p>
         </div>
         <div className="flex gap-2">
+          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+            <button 
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'day' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            >
+              Day
+            </button>
+            <button 
+              onClick={() => setViewMode('week')}
+              className={`px-3 py-2 text-sm font-medium transition-colors border-l border-slate-200 ${viewMode === 'week' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            >
+              Week
+            </button>
+            <button 
+              onClick={() => setViewMode('month')}
+              className={`px-3 py-2 text-sm font-medium transition-colors border-l border-slate-200 ${viewMode === 'month' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+            >
+              Month
+            </button>
+          </div>
           <Button variant="outline">
             <Clock className="w-4 h-4 mr-2" /> Today
           </Button>
@@ -785,69 +844,179 @@ function SchedulingView({
         </CardContent>
       </Card>
 
-      {/* Calendar View */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 gap-2">
-            {timeSlots.map((time) => {
-              const appointment = practiceData.todayAppointments.find(a => a.time === time)
-              const isGap = time === '1:00 PM'
-              
-              return (
-                <div 
-                  key={time} 
-                  className={`flex items-center gap-4 p-3 rounded-lg border-2 border-dashed transition-all ${
-                    appointment 
-                      ? 'border-transparent bg-slate-50' 
-                      : isGap 
-                        ? 'border-indigo-300 bg-indigo-50' 
-                        : 'border-slate-200 bg-white'
-                  }`}
-                >
-                  <div className="w-20 text-sm font-medium text-slate-500">{time}</div>
-                  {appointment ? (
-                    <div 
-                      className={`flex-1 p-3 rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                        appointment.status === 'ai-suggested' 
-                          ? 'bg-orange-100 border border-orange-200' 
-                          : 'bg-white border border-slate-200'
-                      }`}
-                      onClick={() => onSelectPatient(appointment.patient)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-slate-900">{appointment.patient}</p>
-                          <p className="text-sm text-slate-500">{appointment.type} - {appointment.duration}</p>
+      {/* Day View */}
+      {viewMode === 'day' && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Today - February 3, 2026</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-2">
+            <div className="grid grid-cols-1 gap-2">
+              {timeSlots.map((time) => {
+                const appointment = practiceData.todayAppointments.find(a => a.time === time)
+                const isGap = time === '1:00 PM'
+                
+                return (
+                  <div 
+                    key={time} 
+                    className={`flex items-center gap-4 p-3 rounded-lg border-2 border-dashed transition-all ${
+                      appointment 
+                        ? 'border-transparent bg-slate-50' 
+                        : isGap 
+                          ? 'border-indigo-300 bg-indigo-50' 
+                          : 'border-slate-200 bg-white'
+                    }`}
+                  >
+                    <div className="w-20 text-sm font-medium text-slate-500">{time}</div>
+                    {appointment ? (
+                      <div 
+                        className={`flex-1 p-3 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                          appointment.status === 'ai-suggested' 
+                            ? 'bg-orange-100 border border-orange-200' 
+                            : 'bg-white border border-slate-200'
+                        }`}
+                        onClick={() => onSelectPatient(appointment.patient)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-slate-900">{appointment.patient}</p>
+                            <p className="text-sm text-slate-500">{appointment.type} - {appointment.duration}</p>
+                          </div>
+                          <Badge 
+                            className={
+                              appointment.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                              appointment.status === 'ai-suggested' ? 'bg-orange-100 text-orange-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }
+                          >
+                            {appointment.status === 'ai-suggested' ? 'AI Suggested' : appointment.status}
+                          </Badge>
                         </div>
-                        <Badge 
-                          className={
-                            appointment.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                            appointment.status === 'ai-suggested' ? 'bg-orange-100 text-orange-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }
-                        >
-                          {appointment.status === 'ai-suggested' ? 'AI Suggested' : appointment.status}
-                        </Badge>
                       </div>
-                    </div>
-                  ) : isGap ? (
-                    <div className="flex-1 p-3 rounded-lg bg-indigo-100 border border-indigo-200 text-center">
-                      <p className="text-indigo-700 font-medium">
-                        AI Suggested: Schedule {practiceType === 'chiropractic' ? 'Brian Evans' : 'Jennifer Lee'}
-                      </p>
-                      <p className="text-sm text-indigo-600">Click to auto-fill this gap</p>
-                    </div>
-                  ) : (
-                    <div className="flex-1 p-3 text-center text-slate-400">
-                      Available - Drag appointment here
-                    </div>
-                  )}
+                    ) : isGap ? (
+                      <div className="flex-1 p-3 rounded-lg bg-indigo-100 border border-indigo-200 text-center">
+                        <p className="text-indigo-700 font-medium">
+                          AI Suggested: Schedule {practiceType === 'chiropractic' ? 'Brian Evans' : 'Jennifer Lee'}
+                        </p>
+                        <p className="text-sm text-indigo-600">Click to auto-fill this gap</p>
+                      </div>
+                    ) : (
+                      <div className="flex-1 p-3 text-center text-slate-400">
+                        Available - Drag appointment here
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Week View */}
+      {viewMode === 'week' && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Week of February 3 - 9, 2026</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-2">
+            <div className="grid grid-cols-7 gap-2">
+              {weekDays.map((day, index) => (
+                <div key={day} className="text-center">
+                  <div className="font-medium text-slate-900">{day}</div>
+                  <div className="text-xs text-slate-500 mb-2">{weekDates[index]}</div>
+                  <div className={`min-h-[300px] rounded-lg p-2 ${day === 'Sat' || day === 'Sun' ? 'bg-slate-100' : 'bg-slate-50'}`}>
+                    {weeklyAppointments[day]?.map((apt, i) => (
+                      <div 
+                        key={i}
+                        onClick={() => onSelectPatient(apt.patient)}
+                        className="mb-2 p-2 bg-white rounded border border-slate-200 cursor-pointer hover:shadow-md transition-all text-left"
+                      >
+                        <p className="text-xs text-slate-500">{apt.time}</p>
+                        <p className="text-sm font-medium text-slate-900 truncate">{apt.patient}</p>
+                        <p className="text-xs text-slate-500 truncate">{apt.type}</p>
+                      </div>
+                    ))}
+                    {(day === 'Sat' || day === 'Sun') && (
+                      <p className="text-xs text-slate-400 mt-4">Closed</p>
+                    )}
+                  </div>
                 </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Month View */}
+      {viewMode === 'month' && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">February 2026</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-2">
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {weekDays.map(day => (
+                <div key={day} className="text-center font-medium text-slate-500 text-sm py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-2">
+              {monthDays.map(day => {
+                const appointmentCount = monthAppointmentCounts[day] || 0
+                const isWeekend = (day % 7 === 0) || (day % 7 === 6)
+                const isToday = day === 3
+                
+                return (
+                  <div 
+                    key={day}
+                    className={`min-h-[80px] rounded-lg p-2 border transition-all cursor-pointer hover:shadow-md ${
+                      isToday 
+                        ? 'border-teal-500 bg-teal-50' 
+                        : isWeekend 
+                          ? 'border-slate-200 bg-slate-100' 
+                          : 'border-slate-200 bg-white'
+                    }`}
+                  >
+                    <div className={`text-sm font-medium ${isToday ? 'text-teal-700' : 'text-slate-700'}`}>
+                      {day}
+                    </div>
+                    {appointmentCount > 0 && (
+                      <div className={`mt-1 text-xs px-2 py-1 rounded-full text-center ${
+                        appointmentCount >= 5 
+                          ? 'bg-red-100 text-red-700' 
+                          : appointmentCount >= 3 
+                            ? 'bg-yellow-100 text-yellow-700' 
+                            : 'bg-green-100 text-green-700'
+                      }`}>
+                        {appointmentCount} appts
+                      </div>
+                    )}
+                    {isWeekend && appointmentCount === 0 && (
+                      <p className="text-xs text-slate-400 mt-1">Closed</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex items-center gap-4 mt-4 text-xs text-slate-500">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-green-100 border border-green-300"></div>
+                <span>Light (1-2)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300"></div>
+                <span>Moderate (3-4)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-red-100 border border-red-300"></div>
+                <span>Busy (5+)</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
