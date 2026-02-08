@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
@@ -6,7 +6,9 @@ from datetime import datetime, date, time, timedelta
 from enum import Enum
 import random
 import os
+import tempfile
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -1038,8 +1040,226 @@ async def ai_chat(request: ChatRequest):
     except Exception as e:
         return ChatResponse(response=f"Error: {str(e)}", success=False)
 
+# ============================================================================
+# VOICE-TO-SOAP NOTES FEATURE
+# ============================================================================
+
+# Initialize OpenAI client
+def get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    return OpenAI(api_key=api_key)
+
+class TranscriptionResponse(BaseModel):
+    transcript: str
+    success: bool
+    error: Optional[str] = None
+
+class SOAPFromTranscriptRequest(BaseModel):
+    transcript: str
+    patient_id: str
+    appointment_id: Optional[str] = None
+    practice_type: str = "chiropractic"
+
+class SOAPFromTranscriptResponse(BaseModel):
+    subjective: str
+    objective: str
+    assessment: str
+    plan: str
+    diagnosis_codes: List[str]
+    procedure_codes: List[str]
+    ai_generated: bool
+    success: bool
+    error: Optional[str] = None
+
+@app.post("/api/voice/transcribe", response_model=TranscriptionResponse)
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """
+    Transcribe audio file using OpenAI Whisper API.
+    Accepts audio files (webm, mp3, wav, m4a, etc.)
+    """
+    client = get_openai_client()
+    if not client:
+        return TranscriptionResponse(
+            transcript="",
+            success=False,
+            error="OpenAI API key not configured"
+        )
+    
+    try:
+        # Save uploaded file to temp location
+        suffix = f".{audio.filename.split('.')[-1]}" if audio.filename and '.' in audio.filename else ".webm"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            content = await audio.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        # Transcribe using Whisper
+        with open(temp_file_path, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+                response_format="text"
+            )
+        
+        # Clean up temp file
+        os.unlink(temp_file_path)
+        
+        return TranscriptionResponse(
+            transcript=transcription,
+            success=True
+        )
+    except Exception as e:
+        return TranscriptionResponse(
+            transcript="",
+            success=False,
+            error=str(e)
+        )
+
+@app.post("/api/voice/generate-soap", response_model=SOAPFromTranscriptResponse)
+async def generate_soap_from_transcript(request: SOAPFromTranscriptRequest):
+    """
+    Generate a structured SOAP note from a session transcript using GPT-4.
+    """
+    client = get_openai_client()
+    if not client:
+        return SOAPFromTranscriptResponse(
+            subjective="",
+            objective="",
+            assessment="",
+            plan="",
+            diagnosis_codes=[],
+            procedure_codes=[],
+            ai_generated=True,
+            success=False,
+            error="OpenAI API key not configured"
+        )
+    
+    # Get patient info if available
+    patient = next((p for p in patients_db if p.id == request.patient_id), None)
+    patient_context = ""
+    if patient:
+        patient_context = f"""
+Patient Information:
+- Name: {patient.first_name} {patient.last_name}
+- Chief Complaint: {patient.chief_complaint}
+- Status: {patient.status.value}
+- Previous visits: {'Yes' if patient.last_visit else 'No (new patient)'}
+"""
+    
+    practice_context = "chiropractic" if request.practice_type == "chiropractic" else "physical therapy"
+    
+    system_prompt = f"""You are a medical documentation assistant for a {practice_context} practice. 
+Your task is to convert a recorded session transcript into a properly formatted SOAP note.
+
+{patient_context}
+
+Guidelines:
+- Extract relevant information from the transcript
+- Use professional medical terminology appropriate for {practice_context}
+- Be concise but thorough
+- Include specific measurements, pain levels, and observations mentioned
+- For diagnosis codes, use appropriate ICD-10 codes
+- For procedure codes, use appropriate CPT codes for {practice_context}
+
+Return a JSON object with the following structure:
+{{
+    "subjective": "Patient's reported symptoms, history, and concerns",
+    "objective": "Clinical findings, measurements, ROM, palpation findings, etc.",
+    "assessment": "Clinical assessment and diagnosis",
+    "plan": "Treatment plan, recommendations, follow-up",
+    "diagnosis_codes": ["ICD-10 codes"],
+    "procedure_codes": ["CPT codes"]
+}}"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Please convert this session transcript into a SOAP note:\n\n{request.transcript}"}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.3
+        )
+        
+        import json
+        result = json.loads(response.choices[0].message.content)
+        
+        return SOAPFromTranscriptResponse(
+            subjective=result.get("subjective", ""),
+            objective=result.get("objective", ""),
+            assessment=result.get("assessment", ""),
+            plan=result.get("plan", ""),
+            diagnosis_codes=result.get("diagnosis_codes", []),
+            procedure_codes=result.get("procedure_codes", []),
+            ai_generated=True,
+            success=True
+        )
+    except Exception as e:
+        return SOAPFromTranscriptResponse(
+            subjective="",
+            objective="",
+            assessment="",
+            plan="",
+            diagnosis_codes=[],
+            procedure_codes=[],
+            ai_generated=True,
+            success=False,
+            error=str(e)
+        )
+
+@app.post("/api/voice/transcribe-and-generate-soap")
+async def transcribe_and_generate_soap(
+    audio: UploadFile = File(...),
+    patient_id: str = Form(...),
+    appointment_id: Optional[str] = Form(None),
+    practice_type: str = Form("chiropractic")
+):
+    """
+    Combined endpoint: Transcribe audio and generate SOAP note in one call.
+    This is more efficient for the frontend as it reduces round trips.
+    """
+    # First, transcribe the audio
+    transcription_result = await transcribe_audio(audio)
+    
+    if not transcription_result.success:
+        return {
+            "transcript": "",
+            "soap_note": None,
+            "success": False,
+            "error": transcription_result.error
+        }
+    
+    # Then generate SOAP note from transcript
+    soap_request = SOAPFromTranscriptRequest(
+        transcript=transcription_result.transcript,
+        patient_id=patient_id,
+        appointment_id=appointment_id,
+        practice_type=practice_type
+    )
+    
+    soap_result = await generate_soap_from_transcript(soap_request)
+    
+    return {
+        "transcript": transcription_result.transcript,
+        "soap_note": {
+            "subjective": soap_result.subjective,
+            "objective": soap_result.objective,
+            "assessment": soap_result.assessment,
+            "plan": soap_result.plan,
+            "diagnosis_codes": soap_result.diagnosis_codes,
+            "procedure_codes": soap_result.procedure_codes,
+            "ai_generated": soap_result.ai_generated
+        } if soap_result.success else None,
+        "success": soap_result.success,
+        "error": soap_result.error
+    }
+
 print("Auvora Wellness CRM API initialized successfully!")
 print(f"Practice: {practice_config['name']}")
 print(f"Patients: {len(patients_db)}")
 print(f"Providers: {len(providers_db)}")
 print(f"Today's Appointments: {len([a for a in appointments_db if a.date == datetime.now().strftime('%Y-%m-%d')])}")
+print("Voice-to-SOAP Notes feature enabled!")

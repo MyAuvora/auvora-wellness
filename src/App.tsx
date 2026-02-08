@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -49,7 +49,11 @@ import {
   Download,
   Eye,
   File,
-  X
+  X,
+  Mic,
+  MicOff,
+  Square,
+  Loader2
 } from 'lucide-react'
 
 type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication'
@@ -658,6 +662,126 @@ function PatientView({
   onApproveSOAP: () => void
   onNavigateToBilling: () => void
 }) {
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [transcript, setTranscript] = useState<string | null>(null)
+  const [voiceGeneratedSOAP, setVoiceGeneratedSOAP] = useState<{
+    subjective: string
+    objective: string
+    assessment: string
+    plan: string
+    diagnosis_codes: string[]
+    procedure_codes: string[]
+  } | null>(null)
+  const [showVoiceModal, setShowVoiceModal] = useState(false)
+  const [recordingError, setRecordingError] = useState<string | null>(null)
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const startRecording = async () => {
+    try {
+      setRecordingError(null)
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+        }
+      }
+
+      mediaRecorder.start(1000) // Collect data every second
+      setIsRecording(true)
+      setRecordingTime(0)
+      
+      // Start timer
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1)
+      }, 1000)
+    } catch (error) {
+      console.error('Error starting recording:', error)
+      setRecordingError('Could not access microphone. Please allow microphone access and try again.')
+    }
+  }
+
+  const stopRecording = async () => {
+    if (!mediaRecorderRef.current) return
+
+    return new Promise<Blob>((resolve) => {
+      mediaRecorderRef.current!.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        resolve(audioBlob)
+      }
+      mediaRecorderRef.current!.stop()
+      mediaRecorderRef.current!.stream.getTracks().forEach(track => track.stop())
+      
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+      setIsRecording(false)
+    })
+  }
+
+  const handleStopAndProcess = async () => {
+    setIsProcessing(true)
+    try {
+      const audioBlob = await stopRecording()
+      
+      if (!audioBlob) {
+        setRecordingError('No audio recorded. Please try again.')
+        setIsProcessing(false)
+        return
+      }
+      
+      // Create form data for the API
+      const formData = new FormData()
+      formData.append('audio', audioBlob, 'recording.webm')
+      formData.append('patient_id', `pat_${patient.id.toString().padStart(3, '0')}`)
+      formData.append('practice_type', practiceType)
+
+      // Call the combined transcribe and generate SOAP endpoint
+      const response = await fetch(`${API_URL}/api/voice/transcribe-and-generate-soap`, {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+
+      if (result.success && result.soap_note) {
+        setTranscript(result.transcript)
+        setVoiceGeneratedSOAP(result.soap_note)
+        setShowVoiceModal(true)
+      } else {
+        setRecordingError(result.error || 'Failed to process recording')
+      }
+    } catch (error) {
+      console.error('Error processing recording:', error)
+      setRecordingError('Failed to process recording. Please try again.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const useVoiceGeneratedSOAP = () => {
+    // This would update the SOAP note in the main view
+    // For now, we'll just close the modal and show it was applied
+    setShowVoiceModal(false)
+    onApproveSOAP()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -690,6 +814,159 @@ function PatientView({
           </Button>
         </div>
       </div>
+
+      {/* Voice Recording Card */}
+      <Card className={`border-2 ${isRecording ? 'border-red-400 bg-red-50' : 'border-indigo-200 bg-indigo-50'}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-indigo-500'}`}>
+                {isRecording ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">
+                  {isRecording ? 'Recording Session...' : isProcessing ? 'Processing...' : 'Voice-to-SOAP Notes'}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {isRecording 
+                    ? `Recording: ${formatTime(recordingTime)} - Click Stop to process`
+                    : isProcessing 
+                    ? 'Transcribing audio and generating SOAP note...'
+                    : 'Record your session and AI will generate SOAP notes automatically'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isRecording ? (
+                <Button 
+                  onClick={handleStopAndProcess}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Square className="w-4 h-4 mr-2" /> Stop & Generate SOAP
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={startRecording}
+                  className={`bg-gradient-to-r ${practiceData.practiceColor} text-white`}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4 h-4 mr-2" /> Record Session
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
+          {recordingError && (
+            <div className="mt-3 p-3 bg-red-100 border border-red-300 rounded-lg text-red-700 text-sm">
+              {recordingError}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Voice Generated SOAP Modal */}
+      {showVoiceModal && voiceGeneratedSOAP && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${practiceData.practiceColor} flex items-center justify-center`}>
+                    <Mic className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">AI-Generated SOAP Note</h2>
+                    <p className="text-sm text-slate-500">Generated from voice recording</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowVoiceModal(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Transcript Section */}
+              {transcript && (
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h4 className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> Session Transcript
+                  </h4>
+                  <p className="text-sm text-slate-600 italic">{transcript}</p>
+                </div>
+              )}
+
+              {/* SOAP Note Sections */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-800 mb-2">Subjective</h4>
+                  <p className="text-sm text-slate-700">{voiceGeneratedSOAP.subjective}</p>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-green-800 mb-2">Objective</h4>
+                  <p className="text-sm text-slate-700">{voiceGeneratedSOAP.objective}</p>
+                </div>
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <h4 className="font-semibold text-yellow-800 mb-2">Assessment</h4>
+                  <p className="text-sm text-slate-700">{voiceGeneratedSOAP.assessment}</p>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <h4 className="font-semibold text-purple-800 mb-2">Plan</h4>
+                  <p className="text-sm text-slate-700">{voiceGeneratedSOAP.plan}</p>
+                </div>
+              </div>
+
+              {/* Codes */}
+              <div className="flex gap-4">
+                <div className="flex-1 p-3 bg-slate-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-slate-700 mb-2">Diagnosis Codes (ICD-10)</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {voiceGeneratedSOAP.diagnosis_codes.map((code, i) => (
+                      <Badge key={i} variant="outline" className="bg-white">{code}</Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1 p-3 bg-slate-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-slate-700 mb-2">Procedure Codes (CPT)</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {voiceGeneratedSOAP.procedure_codes.map((code, i) => (
+                      <Badge key={i} variant="outline" className="bg-white">{code}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowVoiceModal(false)}>
+                Edit Note
+              </Button>
+              <Button 
+                className={`bg-gradient-to-r ${practiceData.practiceColor} text-white`}
+                onClick={useVoiceGeneratedSOAP}
+              >
+                <Check className="w-4 h-4 mr-2" /> Approve & Sign
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Summary */}
       <Card className="border-purple-200 bg-purple-50">
