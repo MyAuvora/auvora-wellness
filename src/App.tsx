@@ -293,21 +293,22 @@ function DemoApp() {
                             </main>
       </div>
 
-      {/* Floating Ask Auvora Button */}
-      <button
-        onClick={() => setShowAIAssistant(!showAIAssistant)}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-50 ${
-          showAIAssistant 
-            ? 'bg-slate-600 hover:bg-slate-700' 
-            : `bg-gradient-to-r ${practiceData.practiceColor} hover:shadow-xl`
-        }`}
-      >
-        {showAIAssistant ? (
-          <X className="w-6 h-6 text-white" />
-        ) : (
-          <Bot className="w-6 h-6 text-white" />
-        )}
-      </button>
+      {/* Floating Ask Auvora Button - Enhanced Style */}
+      {!showAIAssistant && (
+        <button
+          onClick={() => setShowAIAssistant(true)}
+          className={`fixed bottom-6 right-6 h-14 px-5 rounded-full shadow-lg flex items-center gap-3 transition-all duration-300 z-50 bg-gradient-to-r ${practiceData.practiceColor} hover:shadow-2xl hover:scale-105 group`}
+        >
+          <div className="relative">
+            <MessageCircle className="w-6 h-6 text-white" />
+            <Sparkles className="w-3 h-3 text-yellow-300 absolute -top-1 -right-1 animate-pulse" />
+          </div>
+          <span className="text-white font-semibold text-sm">Ask Auvora</span>
+          <div className="bg-white/20 px-2 py-0.5 rounded-full">
+            <span className="text-white text-xs font-medium">AI</span>
+          </div>
+        </button>
+      )}
 
       {/* AI Assistant Panel - Floating */}
       {showAIAssistant && (
@@ -2040,16 +2041,21 @@ function AIAssistantPanel({
   }
 
     return (
-      <div className="fixed right-6 bottom-24 w-96 h-[500px] bg-white rounded-2xl shadow-2xl z-40 flex flex-col overflow-hidden border border-slate-200">
-        <div className={`bg-gradient-to-r ${practiceData.practiceColor} text-white p-4 flex items-center justify-between`}>
-          <div className="flex items-center gap-2">
-            <Bot className="w-6 h-6" />
+      <div className="fixed right-6 bottom-6 w-[420px] h-[600px] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border-2 border-teal-500">
+        <div className={`bg-gradient-to-r ${practiceData.practiceColor} text-white py-3 px-4 flex items-center justify-between`}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <Sparkles className="w-5 h-5" />
+            </div>
             <div>
-              <h3 className="font-bold">Ask Auvora</h3>
-              <p className="text-xs opacity-90">Your AI Business Assistant</p>
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                Ask Auvora
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-medium">AI Powered</span>
+              </h3>
+              <p className="text-xs opacity-90">Your AI Business & Sales Assistant</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20 h-8 w-8 p-0">
             <X className="w-5 h-5" />
           </Button>
         </div>
