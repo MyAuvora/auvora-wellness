@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import './App.css'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -1658,12 +1660,46 @@ function AIAssistantPanel({
   ])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [conversationHistory, setConversationHistory] = useState<{role: string, content: string}[]>([])
 
-  const getAIResponse = (question: string): string => {
+  const callAIChat = async (message: string): Promise<string> => {
+    try {
+      const response = await fetch(`${API_URL}/api/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          conversation_history: conversationHistory
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to get AI response')
+      }
+      
+      const data = await response.json()
+      
+      // Update conversation history
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'user', content: message },
+        { role: 'assistant', content: data.response }
+      ])
+      
+      return data.response
+    } catch (error) {
+      console.error('AI chat error:', error)
+      // Fallback to local response if API fails
+      return getFallbackResponse(message)
+    }
+  }
+
+  const getFallbackResponse = (question: string): string => {
     const q = question.toLowerCase()
-    const doctorName = practiceType === 'chiropractic' ? 'Dr. Jamie Smith' : 'Dr. Alex Morgan'
     
-    if (q.includes('revenue') || q.includes('money') || q.includes('income') || q.includes('earnings')) {
+    if (q.includes('revenue')|| q.includes('money') || q.includes('income') || q.includes('earnings')) {
       return `Based on your practice data, ${practiceData.practiceName} has generated $47,850 in revenue this month, which is 12% higher than last month. Your average revenue per patient visit is $${practiceType === 'chiropractic' ? '85' : '95'}. I've identified 12 patients due for ${practiceType === 'chiropractic' ? 'wellness visits' : 're-evaluation'} representing $1,440 in potential additional revenue. Would you like me to send them appointment reminders?`
     }
     if (q.includes('appointment') || q.includes('schedule') || q.includes('today') || q.includes('calendar')) {
@@ -1675,21 +1711,6 @@ function AIAssistantPanel({
     if (q.includes('claim') || q.includes('billing') || q.includes('insurance') || q.includes('denied')) {
       return `You have 3 pending claims totaling $2,450. 1 claim for ${practiceData.samplePatients[1].name} was denied due to a coding issue - the wrong modifier was used. I can help you correct and resubmit it. Your claim acceptance rate is 96%, and average days to payment is 18 days. Would you like me to review the denied claim?`
     }
-    if (q.includes('no-show') || q.includes('cancel') || q.includes('miss')) {
-      return `Your no-show rate this month is 4.2%, down from 6.1% last month - great improvement! The AI reminder system has reduced no-shows by 32%. ${practiceData.samplePatients[1].name} missed their last appointment. I recommend sending a personalized reactivation message. Should I draft one?`
-    }
-    if (q.includes('staff') || q.includes('team') || q.includes('employee')) {
-      return `${practiceData.practiceName} has 4 staff members: ${doctorName} (Provider), Sarah (Front Desk), Mike (Billing Specialist), and Lisa (${practiceType === 'chiropractic' ? 'Chiropractic Assistant' : 'PT Assistant'}). Staff productivity is up 15% since implementing Auvora. Would you like to see individual performance metrics?`
-    }
-    if (q.includes('compliance') || q.includes('hipaa') || q.includes('audit') || q.includes('security')) {
-      return `Your practice is fully HIPAA compliant. Last audit: 30 days ago with 0 violations. All 247 patient records are encrypted and access-controlled. 4 staff members have completed annual HIPAA training. Your next compliance review is scheduled for January 15th. Would you like me to generate a compliance report?`
-    }
-    if (q.includes('marketing') || q.includes('new patient') || q.includes('growth') || q.includes('attract')) {
-      return `This month you've acquired 8 new patients, primarily from Google (4), referrals (3), and social media (1). Your Google rating is 4.9 stars with 127 reviews. I can help you launch a reactivation campaign targeting 23 inactive patients or a referral incentive program. Which would you prefer?`
-    }
-    if (q.includes('best') || q.includes('top') || q.includes('performing')) {
-      return `Your top performing metrics:\n• Best day: Tuesdays (avg 12 patients)\n• Most profitable service: ${practiceType === 'chiropractic' ? 'New Patient Exams ($195 avg)' : 'Initial Evaluations ($225 avg)'}\n• Highest retention: ${practiceType === 'chiropractic' ? 'Wellness Care patients (98%)' : 'Post-op rehab patients (97%)'}\n• Best referral source: Existing patients (34%)\n\nWould you like detailed analytics on any of these?`
-    }
     if (q.includes('help') || q.includes('what can you do') || q.includes('capabilities')) {
       return `I can help you with:\n\n📊 **Business Analytics** - Revenue, patient counts, trends\n📅 **Scheduling** - Optimize calendar, fill gaps, reduce no-shows\n💰 **Billing** - Claims status, denials, coding assistance\n👥 **Patients** - Profiles, follow-ups, reactivation\n📧 **Communication** - Draft messages, campaigns, reminders\n✅ **Compliance** - HIPAA status, audits, security\n📈 **Growth** - Marketing, new patients, referrals\n\nJust ask me anything about your practice!`
     }
@@ -1697,7 +1718,7 @@ function AIAssistantPanel({
     return `Great question! Based on ${practiceData.practiceName}'s data, I can provide detailed insights on that. Your practice is performing well with 247 active patients, $47,850 monthly revenue, and a 94% retention rate. Is there a specific aspect you'd like me to dive deeper into - scheduling, billing, patient care, or growth opportunities?`
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return
     
     const userMessage: ChatMessage = {
@@ -1706,21 +1727,22 @@ function AIAssistantPanel({
       content: inputValue
     }
     setChatMessages(prev => [...prev, userMessage])
+    const messageToSend = inputValue
     setInputValue('')
     setIsTyping(true)
     
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: chatMessages.length + 2,
-        role: 'assistant',
-        content: getAIResponse(inputValue)
-      }
-      setChatMessages(prev => [...prev, aiResponse])
-      setIsTyping(false)
-    }, 1000)
+    const aiResponseText = await callAIChat(messageToSend)
+    
+    const aiResponse: ChatMessage = {
+      id: chatMessages.length + 2,
+      role: 'assistant',
+      content: aiResponseText
+    }
+    setChatMessages(prev => [...prev, aiResponse])
+    setIsTyping(false)
   }
 
-  const handleQuickAction = (action: string) => {
+  const handleQuickAction = async (action: string) => {
     const userMessage: ChatMessage = {
       id: chatMessages.length + 1,
       role: 'user',
@@ -1729,15 +1751,15 @@ function AIAssistantPanel({
     setChatMessages(prev => [...prev, userMessage])
     setIsTyping(true)
     
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: chatMessages.length + 2,
-        role: 'assistant',
-        content: getAIResponse(action)
-      }
-      setChatMessages(prev => [...prev, aiResponse])
-      setIsTyping(false)
-    }, 1000)
+    const aiResponseText = await callAIChat(action)
+    
+    const aiResponse: ChatMessage = {
+      id: chatMessages.length + 2,
+      role: 'assistant',
+      content: aiResponseText
+    }
+    setChatMessages(prev => [...prev, aiResponse])
+    setIsTyping(false)
   }
 
     return (
