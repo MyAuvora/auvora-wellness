@@ -22,7 +22,7 @@ def get_openai_client():
     return client
 
 # System prompt that defines the AI agent's personality and capabilities
-SYSTEM_PROMPT = """You are Auvora, an intelligent AI assistant for a chiropractic and wellness practice CRM. You help practice owners, providers (chiropractors, physical therapists, massage therapists), front desk staff, and patients manage their practice operations.
+SYSTEM_PROMPT = """You are Auvora, an intelligent AI assistant AND SALES PROFESSIONAL for a chiropractic and wellness practice CRM. You help practice owners, providers (chiropractors, physical therapists, massage therapists), front desk staff, and patients manage their practice operations AND GROW THEIR BUSINESS.
 
 Your personality:
 - Professional yet warm and approachable
@@ -32,6 +32,59 @@ Your personality:
 - Patient when explaining how to use the CRM
 - Able to understand questions asked in many different ways
 - HIPAA-conscious - never share patient information inappropriately
+- SALES-MINDED - Always looking for opportunities to help the practice grow revenue
+- DATA-DRIVEN - Use metrics to identify problems and opportunities
+- PROACTIVE - Don't wait to be asked, alert users when action is needed
+
+=== SALES PROFESSIONAL CAPABILITIES ===
+
+You are not just a CRM assistant - you are a BUSINESS GROWTH PARTNER. Your job includes:
+
+1. **REVENUE MONITORING**: Track monthly revenue vs goals and alert when behind
+2. **SALES ANALYSIS**: Identify trends, gaps, and opportunities in the data
+3. **PROACTIVE SUGGESTIONS**: Recommend specific actions to increase revenue
+4. **REACTIVATION**: Identify patients who haven't visited recently and suggest outreach
+5. **UPSELLING**: Recommend additional services, packages, and wellness plans
+6. **COLLECTIONS**: Flag outstanding balances and suggest collection strategies
+7. **SCHEDULING OPTIMIZATION**: Fill schedule gaps to maximize revenue
+
+When you notice sales are low or the practice is not on track to hit revenue goals, PROACTIVELY:
+- Alert the user immediately with specific numbers
+- Explain the gap (how much behind, projected shortfall)
+- Provide 3-5 SPECIFIC, ACTIONABLE recommendations
+- Prioritize recommendations by potential impact
+
+SALES STRATEGIES YOU SHOULD RECOMMEND:
+
+**For Low Appointment Volume:**
+- Reactivation campaigns for inactive patients (30+ days since last visit)
+- Referral incentive programs
+- Community outreach and workshops
+- Social media promotions
+- Partnership with local gyms/fitness centers
+
+**For Low Revenue Per Visit:**
+- Wellness care packages (monthly maintenance plans)
+- Family plans (discounts for multiple family members)
+- Prepaid visit packages (10-visit cards)
+- Add-on services (massage, decompression, nutritional counseling)
+- Product sales (supplements, pillows, supports)
+
+**For Outstanding Balances:**
+- Payment plan options
+- Early payment discounts
+- Automated payment reminders
+- Credit card on file programs
+
+**For Schedule Gaps:**
+- Same-day appointment promotions
+- Waitlist management
+- Overbooking strategies for high no-show times
+- Telehealth options for quick consultations
+
+ALWAYS BE SPECIFIC. Instead of "reach out to inactive patients", say "You have 8 patients who haven't visited in 30+ days. Maria Lopez ($150 avg visit value) and John Smith ($175 avg) should be priority calls."
+
+=== END SALES CAPABILITIES ===
 
 You have access to the following data through function calls:
 - Patients: demographics, insurance, visit history, conditions, treatment plans
@@ -468,6 +521,94 @@ AVAILABLE_FUNCTIONS = [
                 "required": ["topic"]
             }
         }
+    },
+    # === SALES PROFESSIONAL FUNCTIONS ===
+    {
+        "type": "function",
+        "function": {
+            "name": "get_revenue_vs_goal",
+            "description": "Get current month's revenue compared to the monthly goal. Shows if practice is on track, behind, or ahead. Use this to monitor sales performance and identify when action is needed.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_reactivation_opportunities",
+            "description": "Get list of patients who haven't visited in 30+ days and are good candidates for reactivation outreach. Includes estimated revenue potential.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days_inactive": {
+                        "type": "integer",
+                        "description": "Minimum days since last visit (default: 30)"
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_upsell_opportunities",
+            "description": "Get patients who could benefit from additional services, wellness packages, or care plans. Identifies revenue growth opportunities.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_schedule_gaps",
+            "description": "Find unfilled appointment slots in the schedule that represent lost revenue opportunities. Suggests patients to fill gaps.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "days_ahead": {
+                        "type": "integer",
+                        "description": "Number of days to look ahead (default: 7)"
+                    }
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_sales_recommendations",
+            "description": "Get AI-powered sales recommendations based on current practice data. Analyzes revenue, appointments, collections, and patient activity to suggest specific actions to increase revenue.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_collection_opportunities",
+            "description": "Get patients with outstanding balances sorted by amount, with suggested collection strategies.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "min_balance": {
+                        "type": "number",
+                        "description": "Minimum balance to include (default: 50)"
+                    }
+                },
+                "required": []
+            }
+        }
     }
 ]
 
@@ -762,6 +903,385 @@ def execute_function(function_name: str, arguments: Dict[str, Any], data_context
 - Checking in patients
 
 What would you like help with?"""
+    
+    # === SALES PROFESSIONAL FUNCTION IMPLEMENTATIONS ===
+    
+    elif function_name == "get_revenue_vs_goal":
+        # Monthly revenue goal (configurable - default $50,000 for a chiropractic practice)
+        monthly_goal = data_context.get("monthly_revenue_goal", 50000)
+        
+        # Calculate current month's revenue
+        today = datetime.now()
+        current_month = today.month
+        current_year = today.year
+        days_in_month = 30  # Simplified
+        days_elapsed = today.day
+        days_remaining = days_in_month - days_elapsed
+        
+        # Sum payments for current month
+        current_revenue = sum(p.get("amount", 0) for p in payments_db)
+        
+        # Calculate projections
+        daily_average = current_revenue / max(days_elapsed, 1)
+        projected_month_end = current_revenue + (daily_average * days_remaining)
+        
+        # Calculate required daily revenue to hit goal
+        revenue_needed = monthly_goal - current_revenue
+        required_daily = revenue_needed / max(days_remaining, 1)
+        
+        # Determine status
+        on_track_pace = (current_revenue / days_elapsed) * days_in_month if days_elapsed > 0 else 0
+        percent_of_goal = (current_revenue / monthly_goal) * 100
+        percent_of_month = (days_elapsed / days_in_month) * 100
+        
+        if percent_of_goal >= percent_of_month:
+            status = "ON_TRACK"
+            status_message = "You're on track to hit your monthly goal!"
+        elif projected_month_end >= monthly_goal * 0.9:
+            status = "SLIGHTLY_BEHIND"
+            status_message = f"You're slightly behind. Need ${required_daily:.0f}/day to hit goal."
+        else:
+            status = "BEHIND"
+            status_message = f"ALERT: You're behind pace. Need ${required_daily:.0f}/day to hit goal."
+        
+        return json.dumps({
+            "monthly_goal": monthly_goal,
+            "current_revenue": round(current_revenue, 2),
+            "days_elapsed": days_elapsed,
+            "days_remaining": days_remaining,
+            "daily_average": round(daily_average, 2),
+            "projected_month_end": round(projected_month_end, 2),
+            "revenue_needed": round(revenue_needed, 2),
+            "required_daily_to_hit_goal": round(required_daily, 2),
+            "percent_of_goal_achieved": round(percent_of_goal, 1),
+            "percent_of_month_elapsed": round(percent_of_month, 1),
+            "status": status,
+            "status_message": status_message
+        }, indent=2)
+    
+    elif function_name == "get_reactivation_opportunities":
+        days_inactive = arguments.get("days_inactive", 30)
+        today = datetime.now()
+        cutoff_date = (today - timedelta(days=days_inactive)).strftime("%Y-%m-%d")
+        
+        # Find patients who haven't visited recently
+        reactivation_candidates = []
+        for p in patients_db:
+            last_visit = p.get("last_visit")
+            if last_visit and last_visit < cutoff_date and p.get("status") in ["active", "inactive"]:
+                # Estimate revenue potential based on average visit value
+                avg_visit_value = 150  # Default chiropractic visit value
+                if p.get("primary_insurance"):
+                    avg_visit_value = 175  # Insured patients typically higher
+                
+                days_since_visit = (today - datetime.strptime(last_visit, "%Y-%m-%d")).days
+                
+                reactivation_candidates.append({
+                    "patient_id": p.get("id"),
+                    "name": f"{p.get('first_name')} {p.get('last_name')}",
+                    "phone": p.get("phone"),
+                    "email": p.get("email"),
+                    "last_visit": last_visit,
+                    "days_since_visit": days_since_visit,
+                    "chief_complaint": p.get("chief_complaint"),
+                    "estimated_visit_value": avg_visit_value,
+                    "has_insurance": bool(p.get("primary_insurance")),
+                    "outstanding_balance": p.get("balance", 0)
+                })
+        
+        # Sort by estimated value (prioritize high-value patients)
+        reactivation_candidates.sort(key=lambda x: x["estimated_visit_value"], reverse=True)
+        
+        total_potential_revenue = sum(c["estimated_visit_value"] for c in reactivation_candidates)
+        
+        return json.dumps({
+            "total_reactivation_candidates": len(reactivation_candidates),
+            "total_potential_revenue": total_potential_revenue,
+            "days_inactive_threshold": days_inactive,
+            "priority_patients": reactivation_candidates[:10],  # Top 10
+            "recommendation": f"Call these {min(len(reactivation_candidates), 10)} patients this week. Potential revenue: ${total_potential_revenue}"
+        }, indent=2)
+    
+    elif function_name == "get_upsell_opportunities":
+        upsell_candidates = []
+        
+        for p in patients_db:
+            opportunities = []
+            estimated_additional_revenue = 0
+            
+            # Check if patient is active and could benefit from wellness plan
+            if p.get("status") == "active":
+                # Wellness care package opportunity
+                if p.get("visit_count", 0) >= 3:
+                    opportunities.append({
+                        "type": "wellness_package",
+                        "description": "Monthly wellness care plan ($199/month)",
+                        "potential_revenue": 199
+                    })
+                    estimated_additional_revenue += 199
+                
+                # Family plan opportunity (if has dependents)
+                if p.get("has_dependents"):
+                    opportunities.append({
+                        "type": "family_plan",
+                        "description": "Family wellness plan - 20% discount for family members",
+                        "potential_revenue": 150
+                    })
+                    estimated_additional_revenue += 150
+                
+                # Add-on services
+                if p.get("chief_complaint") and "back" in p.get("chief_complaint", "").lower():
+                    opportunities.append({
+                        "type": "add_on_service",
+                        "description": "Spinal decompression therapy ($75/session)",
+                        "potential_revenue": 75
+                    })
+                    estimated_additional_revenue += 75
+                
+                # Prepaid package for frequent visitors
+                if p.get("visit_count", 0) >= 5:
+                    opportunities.append({
+                        "type": "prepaid_package",
+                        "description": "10-visit prepaid package ($1,200 - saves $300)",
+                        "potential_revenue": 1200
+                    })
+                    estimated_additional_revenue += 1200
+            
+            if opportunities:
+                upsell_candidates.append({
+                    "patient_id": p.get("id"),
+                    "name": f"{p.get('first_name')} {p.get('last_name')}",
+                    "current_status": p.get("status"),
+                    "visit_count": p.get("visit_count", 0),
+                    "opportunities": opportunities,
+                    "total_potential_revenue": estimated_additional_revenue
+                })
+        
+        # Sort by potential revenue
+        upsell_candidates.sort(key=lambda x: x["total_potential_revenue"], reverse=True)
+        
+        total_upsell_potential = sum(c["total_potential_revenue"] for c in upsell_candidates)
+        
+        return json.dumps({
+            "total_upsell_candidates": len(upsell_candidates),
+            "total_potential_revenue": total_upsell_potential,
+            "top_opportunities": upsell_candidates[:10],
+            "recommendation": f"Focus on these {min(len(upsell_candidates), 10)} patients for upselling. Total potential: ${total_upsell_potential}"
+        }, indent=2)
+    
+    elif function_name == "get_schedule_gaps":
+        days_ahead = arguments.get("days_ahead", 7)
+        today = datetime.now()
+        
+        # Define business hours and slot duration
+        business_hours = [(9, 12), (14, 18)]  # 9am-12pm, 2pm-6pm
+        slot_duration = 30  # minutes
+        
+        gaps = []
+        total_lost_revenue = 0
+        avg_appointment_value = 125
+        
+        for day_offset in range(days_ahead):
+            check_date = (today + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+            day_appointments = [a for a in appointments_db if a.get("date") == check_date]
+            booked_times = [a.get("start_time") for a in day_appointments]
+            
+            # Find gaps in schedule
+            for start_hour, end_hour in business_hours:
+                for hour in range(start_hour, end_hour):
+                    for minute in [0, 30]:
+                        time_slot = f"{hour:02d}:{minute:02d}"
+                        if time_slot not in booked_times:
+                            gaps.append({
+                                "date": check_date,
+                                "time": time_slot,
+                                "lost_revenue": avg_appointment_value
+                            })
+                            total_lost_revenue += avg_appointment_value
+        
+        # Find patients who could fill gaps (due for follow-up, reactivation candidates)
+        suggested_patients = []
+        for p in patients_db:
+            if p.get("status") in ["active", "new"] and p.get("last_visit"):
+                suggested_patients.append({
+                    "name": f"{p.get('first_name')} {p.get('last_name')}",
+                    "phone": p.get("phone"),
+                    "reason": "Due for follow-up"
+                })
+        
+        return json.dumps({
+            "total_gaps": len(gaps),
+            "days_analyzed": days_ahead,
+            "total_potential_lost_revenue": total_lost_revenue,
+            "gaps_by_day": gaps[:20],  # First 20 gaps
+            "suggested_patients_to_call": suggested_patients[:5],
+            "recommendation": f"You have {len(gaps)} unfilled slots in the next {days_ahead} days. Potential lost revenue: ${total_lost_revenue}. Call these patients to fill gaps."
+        }, indent=2)
+    
+    elif function_name == "get_sales_recommendations":
+        # Comprehensive sales analysis
+        today = datetime.now()
+        
+        # Revenue analysis
+        monthly_goal = data_context.get("monthly_revenue_goal", 50000)
+        current_revenue = sum(p.get("amount", 0) for p in payments_db)
+        days_elapsed = today.day
+        days_remaining = 30 - days_elapsed
+        
+        # Patient analysis
+        total_patients = len(patients_db)
+        active_patients = len([p for p in patients_db if p.get("status") == "active"])
+        inactive_patients = len([p for p in patients_db if p.get("status") == "inactive"])
+        
+        # Outstanding balances
+        total_outstanding = sum(p.get("balance", 0) for p in patients_db)
+        patients_with_balance = len([p for p in patients_db if p.get("balance", 0) > 0])
+        
+        # Appointment analysis
+        today_str = today.strftime("%Y-%m-%d")
+        today_appointments = len([a for a in appointments_db if a.get("date") == today_str])
+        
+        # Generate recommendations
+        recommendations = []
+        priority = 1
+        
+        # Check if behind on revenue
+        expected_revenue = (monthly_goal / 30) * days_elapsed
+        if current_revenue < expected_revenue * 0.9:
+            gap = expected_revenue - current_revenue
+            recommendations.append({
+                "priority": priority,
+                "category": "REVENUE_GAP",
+                "title": "Revenue Behind Target",
+                "description": f"You're ${gap:.0f} behind where you should be. Need to generate ${(monthly_goal - current_revenue) / max(days_remaining, 1):.0f}/day to hit goal.",
+                "actions": [
+                    "Call inactive patients for reactivation",
+                    "Offer same-week appointment specials",
+                    "Promote wellness packages to existing patients"
+                ],
+                "potential_impact": gap
+            })
+            priority += 1
+        
+        # Check outstanding balances
+        if total_outstanding > 1000:
+            recommendations.append({
+                "priority": priority,
+                "category": "COLLECTIONS",
+                "title": f"${total_outstanding:.0f} in Outstanding Balances",
+                "description": f"{patients_with_balance} patients have unpaid balances. This is immediate recoverable revenue.",
+                "actions": [
+                    "Send payment reminder emails today",
+                    "Offer payment plans for balances over $200",
+                    "Call top 5 highest balance patients"
+                ],
+                "potential_impact": total_outstanding
+            })
+            priority += 1
+        
+        # Check inactive patients
+        if inactive_patients > 5:
+            potential_reactivation_revenue = inactive_patients * 150
+            recommendations.append({
+                "priority": priority,
+                "category": "REACTIVATION",
+                "title": f"{inactive_patients} Inactive Patients to Reactivate",
+                "description": f"These patients haven't visited recently. Potential revenue: ${potential_reactivation_revenue}",
+                "actions": [
+                    "Send 'We miss you' email campaign",
+                    "Offer returning patient discount",
+                    "Personal phone calls to top 10 patients"
+                ],
+                "potential_impact": potential_reactivation_revenue
+            })
+            priority += 1
+        
+        # Check appointment volume
+        if today_appointments < 8:
+            recommendations.append({
+                "priority": priority,
+                "category": "SCHEDULING",
+                "title": "Low Appointment Volume Today",
+                "description": f"Only {today_appointments} appointments scheduled. Target is 12-15 per day.",
+                "actions": [
+                    "Post same-day availability on social media",
+                    "Call patients due for follow-up",
+                    "Offer telehealth consultations"
+                ],
+                "potential_impact": (12 - today_appointments) * 125
+            })
+            priority += 1
+        
+        # Always suggest upselling
+        recommendations.append({
+            "priority": priority,
+            "category": "UPSELLING",
+            "title": "Upsell Opportunities",
+            "description": "Increase revenue per patient with additional services and packages.",
+            "actions": [
+                "Mention wellness packages to every patient today",
+                "Offer family plans to patients with dependents",
+                "Promote prepaid visit packages (10-visit cards)"
+            ],
+            "potential_impact": active_patients * 50  # Avg $50 upsell per active patient
+        })
+        
+        total_potential = sum(r["potential_impact"] for r in recommendations)
+        
+        return json.dumps({
+            "summary": {
+                "current_revenue": current_revenue,
+                "monthly_goal": monthly_goal,
+                "days_remaining": days_remaining,
+                "total_outstanding": total_outstanding,
+                "active_patients": active_patients,
+                "inactive_patients": inactive_patients
+            },
+            "recommendations": recommendations,
+            "total_potential_revenue": total_potential,
+            "top_action": recommendations[0]["actions"][0] if recommendations else "Keep up the great work!"
+        }, indent=2)
+    
+    elif function_name == "get_collection_opportunities":
+        min_balance = arguments.get("min_balance", 50)
+        
+        patients_with_balance = [
+            p for p in patients_db 
+            if p.get("balance", 0) >= min_balance
+        ]
+        
+        collection_list = []
+        for p in sorted(patients_with_balance, key=lambda x: x.get("balance", 0), reverse=True):
+            balance = p.get("balance", 0)
+            
+            # Determine collection strategy based on balance
+            if balance >= 500:
+                strategy = "High Priority - Personal phone call, offer payment plan"
+            elif balance >= 200:
+                strategy = "Medium Priority - Send statement with payment plan option"
+            else:
+                strategy = "Standard - Send payment reminder email"
+            
+            collection_list.append({
+                "patient_id": p.get("id"),
+                "name": f"{p.get('first_name')} {p.get('last_name')}",
+                "phone": p.get("phone"),
+                "email": p.get("email"),
+                "balance": balance,
+                "last_visit": p.get("last_visit"),
+                "has_insurance": bool(p.get("primary_insurance")),
+                "recommended_strategy": strategy
+            })
+        
+        total_collectible = sum(p["balance"] for p in collection_list)
+        
+        return json.dumps({
+            "total_patients_with_balance": len(collection_list),
+            "total_collectible_amount": total_collectible,
+            "minimum_balance_threshold": min_balance,
+            "collection_list": collection_list[:15],  # Top 15
+            "recommendation": f"Focus on collecting ${total_collectible:.0f} from {len(collection_list)} patients. Start with the highest balances."
+        }, indent=2)
     
     return json.dumps({"error": f"Unknown function: {function_name}"})
 
