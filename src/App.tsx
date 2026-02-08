@@ -53,7 +53,8 @@ import {
   Mic,
   MicOff,
   Square,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react'
 
 type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication' | 'staff-management' | 'practice-settings'
@@ -2543,6 +2544,28 @@ function StaffManagementView({ practiceData }: { practiceData: ReturnType<typeof
 
 // Practice Settings View - Owner/Admin only
 function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeof getPracticeData> }) {
+  const [quickbooksConnected, setQuickbooksConnected] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
+  const [lastSync, setLastSync] = useState<string | null>(null)
+  const [showQuickBooksPanel, setShowQuickBooksPanel] = useState(false)
+
+  const handleConnectQuickBooks = () => {
+    // Simulate OAuth flow
+    setTimeout(() => {
+      setQuickbooksConnected(true)
+      setLastSync(new Date().toLocaleString())
+    }, 1500)
+  }
+
+  const handleSyncNow = () => {
+    setSyncStatus('syncing')
+    setTimeout(() => {
+      setSyncStatus('success')
+      setLastSync(new Date().toLocaleString())
+      setTimeout(() => setSyncStatus('idle'), 2000)
+    }, 2000)
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -2689,7 +2712,10 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
                 </div>
                 <Badge className="bg-yellow-100 text-yellow-700">Not Connected</Badge>
               </div>
-              <div className="p-4 border rounded-lg">
+              <div 
+                className={`p-4 border rounded-lg cursor-pointer transition-all ${quickbooksConnected ? 'border-green-300 bg-green-50' : 'hover:border-green-300'}`}
+                onClick={() => setShowQuickBooksPanel(true)}
+              >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                     <FileText className="w-5 h-5 text-green-600" />
@@ -2699,7 +2725,11 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
                     <p className="text-xs text-slate-500">Accounting</p>
                   </div>
                 </div>
-                <Badge className="bg-yellow-100 text-yellow-700">Not Connected</Badge>
+                {quickbooksConnected ? (
+                  <Badge className="bg-green-100 text-green-700">Connected</Badge>
+                ) : (
+                  <Badge className="bg-yellow-100 text-yellow-700">Not Connected</Badge>
+                )}
               </div>
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
@@ -2717,6 +2747,169 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
           </CardContent>
         </Card>
       </div>
+
+      {/* QuickBooks Integration Panel */}
+      {showQuickBooksPanel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <CardTitle>QuickBooks Online Integration</CardTitle>
+                    <CardDescription>Sync your financial data with QuickBooks</CardDescription>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowQuickBooksPanel(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Connection Status */}
+              <div className={`p-4 rounded-lg ${quickbooksConnected ? 'bg-green-50 border border-green-200' : 'bg-slate-50 border border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {quickbooksConnected ? (
+                      <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-6 h-6 text-slate-400" />
+                    )}
+                    <div>
+                      <p className="font-medium">{quickbooksConnected ? 'Connected to QuickBooks Online' : 'Not Connected'}</p>
+                      {quickbooksConnected && lastSync && (
+                        <p className="text-sm text-slate-500">Last synced: {lastSync}</p>
+                      )}
+                    </div>
+                  </div>
+                  {quickbooksConnected ? (
+                    <Button variant="outline" size="sm" onClick={() => setQuickbooksConnected(false)}>
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button className="bg-green-600 hover:bg-green-700" onClick={handleConnectQuickBooks}>
+                      Connect QuickBooks
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {quickbooksConnected && (
+                <>
+                  {/* Sync Options */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900">Sync Settings</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">Sync Invoices</p>
+                          <p className="text-sm text-slate-500">Automatically sync patient invoices to QuickBooks</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">Sync Payments</p>
+                          <p className="text-sm text-slate-500">Record payments received in QuickBooks</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">Sync Patients as Customers</p>
+                          <p className="text-sm text-slate-500">Create QuickBooks customers from patient records</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">Auto-sync Daily</p>
+                          <p className="text-sm text-slate-500">Automatically sync data every night at midnight</p>
+                        </div>
+                        <Switch />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Manual Sync */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900">Manual Sync</h3>
+                    <div className="flex items-center gap-4">
+                      <Button 
+                        onClick={handleSyncNow}
+                        disabled={syncStatus === 'syncing'}
+                        className={`bg-gradient-to-r ${practiceData.practiceColor}`}
+                      >
+                        {syncStatus === 'syncing' ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                            Syncing...
+                          </>
+                        ) : syncStatus === 'success' ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Sync Complete!
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Sync Now
+                          </>
+                        )}
+                      </Button>
+                      {lastSync && (
+                        <p className="text-sm text-slate-500">Last sync: {lastSync}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sync History */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900">Recent Sync Activity</h3>
+                    <div className="space-y-2">
+                      {[
+                        { action: 'Invoices synced', count: 12, time: '2 hours ago', status: 'success' },
+                        { action: 'Payments recorded', count: 8, time: '2 hours ago', status: 'success' },
+                        { action: 'New customers created', count: 3, time: '1 day ago', status: 'success' },
+                        { action: 'Invoice sync failed', count: 1, time: '3 days ago', status: 'error' },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {item.status === 'success' ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <AlertCircle className="w-4 h-4 text-red-500" />
+                            )}
+                            <span className="text-sm">{item.action}</span>
+                            <Badge variant="outline">{item.count} items</Badge>
+                          </div>
+                          <span className="text-xs text-slate-400">{item.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {!quickbooksConnected && (
+                <div className="text-center py-8">
+                  <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-700 mb-2">Connect to QuickBooks Online</h3>
+                  <p className="text-slate-500 mb-4 max-w-md mx-auto">
+                    Sync your invoices, payments, and patient data with QuickBooks Online for seamless accounting.
+                  </p>
+                  <Button className="bg-green-600 hover:bg-green-700" onClick={handleConnectQuickBooks}>
+                    Connect QuickBooks
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
