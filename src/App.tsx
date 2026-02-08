@@ -56,9 +56,59 @@ import {
   Loader2
 } from 'lucide-react'
 
-type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication'
+type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication' | 'staff-management' | 'practice-settings'
 type PracticeType = 'chiropractic' | 'physical-therapy'
 type UserRole = 'provider' | 'patient'
+type StaffRole = 'owner' | 'doctor' | 'front-desk'
+
+// Role-based navigation configuration
+const getRoleNavigation = (role: StaffRole) => {
+  const baseNav = [
+    { id: 'dashboard', icon: 'BarChart3', label: 'Dashboard' },
+    { id: 'scheduling', icon: 'Calendar', label: 'Scheduling' },
+  ]
+  
+  if (role === 'owner') {
+    return [
+      ...baseNav,
+      { id: 'patient', icon: 'Users', label: 'Patient Visit' },
+      { id: 'billing', icon: 'DollarSign', label: 'Billing & Finance' },
+      { id: 'communication', icon: 'MessageSquare', label: 'Communication' },
+      { id: 'analytics', icon: 'TrendingUp', label: 'Analytics' },
+      { id: 'staff-management', icon: 'Users', label: 'Staff Management' },
+      { id: 'practice-settings', icon: 'Settings', label: 'Practice Settings' },
+      { id: 'compliance', icon: 'Shield', label: 'Compliance' },
+    ]
+  }
+  
+  if (role === 'doctor') {
+    return [
+      ...baseNav,
+      { id: 'patient', icon: 'Users', label: 'Patient Visit' },
+      { id: 'communication', icon: 'MessageSquare', label: 'Communication' },
+      { id: 'analytics', icon: 'TrendingUp', label: 'My Analytics' },
+    ]
+  }
+  
+  // Front desk
+  return [
+    ...baseNav,
+    { id: 'billing', icon: 'DollarSign', label: 'Billing & Payments' },
+    { id: 'communication', icon: 'MessageSquare', label: 'Communication' },
+  ]
+}
+
+// Role display names and info
+const getRoleInfo = (role: StaffRole) => {
+  switch (role) {
+    case 'owner':
+      return { name: 'Dr. Jamie Smith', title: 'Owner/Admin', initials: 'JS' }
+    case 'doctor':
+      return { name: 'Dr. Sarah Chen', title: 'Chiropractor', initials: 'SC' }
+    case 'front-desk':
+      return { name: 'Emily Rodriguez', title: 'Front Desk', initials: 'ER' }
+  }
+}
 
 interface ChatMessage {
   id: number
@@ -138,11 +188,16 @@ function DemoApp() {
   const [currentView, setCurrentView] = useState<DemoView>('dashboard')
   const [showAIAssistant, setShowAIAssistant] = useState(false)
   const [userRole, setUserRole] = useState<UserRole>('provider')
+  const [staffRole, setStaffRole] = useState<StaffRole>('owner')
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false)
   
   const practiceData = getPracticeData(practiceType)
   const [selectedPatient, setSelectedPatient] = useState(practiceData.samplePatients[0])
   const [soapApproved, setSoapApproved] = useState(false)
   const [claimSubmitted, setClaimSubmitted] = useState(false)
+
+  const roleInfo = getRoleInfo(staffRole)
+  const navItems = getRoleNavigation(staffRole)
 
   const handlePracticeTypeChange = (checked: boolean) => {
     const newType = checked ? 'physical-therapy' : 'chiropractic'
@@ -151,6 +206,12 @@ function DemoApp() {
     setSelectedPatient(newData.samplePatients[0])
     setSoapApproved(false)
     setClaimSubmitted(false)
+  }
+
+  const handleRoleChange = (newRole: StaffRole) => {
+    setStaffRole(newRole)
+    setCurrentView('dashboard')
+    setShowRoleDropdown(false)
   }
 
   // If patient role, render patient portal
@@ -200,7 +261,7 @@ function DemoApp() {
                         className="text-teal-600 border-teal-300 hover:bg-teal-50"
                       >
                         <Users className="w-4 h-4 mr-2" />
-                        Patient Portal Demo
+                        Patient Portal
                       </Button>
                       <Button variant="ghost" size="sm" className="text-slate-600">
                         <Bell className="w-4 h-4 mr-2" />
@@ -209,15 +270,52 @@ function DemoApp() {
                       <Button variant="ghost" size="sm" className="text-slate-600">
                         <Settings className="w-4 h-4" />
                       </Button>
-            <div className="flex items-center gap-2 pl-4 border-l border-slate-200">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white`}>
-                  {practiceType === 'chiropractic' ? 'JS' : 'AM'}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium text-slate-700">
-                {practiceType === 'chiropractic' ? 'Dr. Jamie Smith' : 'Dr. Alex Morgan'}
-              </span>
+            {/* Role Selector Dropdown */}
+            <div className="relative pl-4 border-l border-slate-200">
+              <button
+                onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+                className="flex items-center gap-2 hover:bg-slate-50 rounded-lg px-2 py-1 transition-colors"
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-sm`}>
+                    {roleInfo.initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-slate-700">{roleInfo.name}</p>
+                  <p className="text-xs text-slate-500">{roleInfo.title}</p>
+                </div>
+                <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${showRoleDropdown ? 'rotate-90' : ''}`} />
+              </button>
+              
+              {/* Dropdown Menu */}
+              {showRoleDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                  <p className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase">Switch Account (Demo)</p>
+                  {[
+                    { role: 'owner' as StaffRole, name: 'Dr. Jamie Smith', title: 'Owner/Admin', initials: 'JS' },
+                    { role: 'doctor' as StaffRole, name: 'Dr. Sarah Chen', title: 'Chiropractor', initials: 'SC' },
+                    { role: 'front-desk' as StaffRole, name: 'Emily Rodriguez', title: 'Front Desk', initials: 'ER' },
+                  ].map((item) => (
+                    <button
+                      key={item.role}
+                      onClick={() => handleRoleChange(item.role)}
+                      className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors ${staffRole === item.role ? 'bg-teal-50' : ''}`}
+                    >
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback className={`${staffRole === item.role ? `bg-gradient-to-br ${practiceData.practiceColor}` : 'bg-slate-200'} text-${staffRole === item.role ? 'white' : 'slate-600'} text-sm`}>
+                          {item.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-medium text-slate-700">{item.name}</p>
+                        <p className="text-xs text-slate-500">{item.title}</p>
+                      </div>
+                      {staffRole === item.role && <Check className="w-4 h-4 text-teal-600" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -226,29 +324,40 @@ function DemoApp() {
       <div className="flex">
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-slate-200 min-h-[calc(100vh-64px)] p-4">
+          {/* Role Badge */}
+          <div className={`mb-4 p-3 rounded-lg bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
+            <p className="text-xs opacity-80">Logged in as</p>
+            <p className="font-semibold">{roleInfo.title}</p>
+          </div>
+          
           <nav className="space-y-1">
-            {[
-              { id: 'dashboard', icon: BarChart3, label: 'Dashboard' },
-              { id: 'scheduling', icon: Calendar, label: 'Scheduling' },
-              { id: 'patient', icon: Users, label: 'Patient Visit' },
-              { id: 'billing', icon: DollarSign, label: 'Billing' },
-              { id: 'communication', icon: MessageSquare, label: 'Communication' },
-              { id: 'analytics', icon: TrendingUp, label: 'Analytics' },
-              { id: 'compliance', icon: Shield, label: 'Compliance' },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setCurrentView(item.id as DemoView)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                  currentView === item.id
-                    ? `bg-gradient-to-r ${practiceData.practiceColor} text-white font-medium`
-                    : 'text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const iconMap: Record<string, typeof BarChart3> = {
+                'BarChart3': BarChart3,
+                'Calendar': Calendar,
+                'Users': Users,
+                'DollarSign': DollarSign,
+                'MessageSquare': MessageSquare,
+                'TrendingUp': TrendingUp,
+                'Shield': Shield,
+                'Settings': Settings,
+              }
+              const Icon = iconMap[item.icon] || BarChart3
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentView(item.id as DemoView)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    currentView === item.id
+                      ? `bg-gradient-to-r ${practiceData.practiceColor} text-white font-medium`
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              )
+            })}
           </nav>
         </aside>
 
@@ -310,6 +419,12 @@ function DemoApp() {
               practiceType={practiceType}
               practiceData={practiceData}
             />
+          )}
+          {currentView === 'staff-management' && (
+            <StaffManagementView practiceData={practiceData} />
+          )}
+          {currentView === 'practice-settings' && (
+            <PracticeSettingsView practiceData={practiceData} />
           )}
 
                             </main>
@@ -2287,6 +2402,320 @@ function AIAssistantPanel({
             <Send className="w-4 h-4" />
           </Button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Staff Management View - Owner/Admin only
+function StaffManagementView({ practiceData }: { practiceData: ReturnType<typeof getPracticeData> }) {
+  const staffMembers = [
+    { id: 1, name: 'Dr. Jamie Smith', role: 'Owner/Admin', email: 'jamie@unwindchiro.com', phone: '(555) 123-4567', status: 'active', hireDate: 'Jan 2020' },
+    { id: 2, name: 'Dr. Sarah Chen', role: 'Chiropractor', email: 'sarah@unwindchiro.com', phone: '(555) 234-5678', status: 'active', hireDate: 'Mar 2022' },
+    { id: 3, name: 'Emily Rodriguez', role: 'Front Desk', email: 'emily@unwindchiro.com', phone: '(555) 345-6789', status: 'active', hireDate: 'Jun 2023' },
+    { id: 4, name: 'Michael Thompson', role: 'Massage Therapist', email: 'michael@unwindchiro.com', phone: '(555) 456-7890', status: 'active', hireDate: 'Sep 2023' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Staff Management</h1>
+          <p className="text-slate-500">Manage your team members and their access levels</p>
+        </div>
+        <Button className={`bg-gradient-to-r ${practiceData.practiceColor}`}>
+          <Users className="w-4 h-4 mr-2" />
+          Add Staff Member
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Total Staff</p>
+                <p className="text-2xl font-bold">4</p>
+              </div>
+              <Users className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Providers</p>
+                <p className="text-2xl font-bold">2</p>
+              </div>
+              <Activity className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Support Staff</p>
+                <p className="text-2xl font-bold">2</p>
+              </div>
+              <Phone className="w-8 h-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Active Today</p>
+                <p className="text-2xl font-bold">3</p>
+              </div>
+              <CheckCircle2 className="w-8 h-8 text-teal-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+          <CardDescription>View and manage staff accounts and permissions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {staffMembers.map((staff) => (
+              <div key={staff.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-12 h-12">
+                    <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white`}>
+                      {staff.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold text-slate-900">{staff.name}</p>
+                    <p className="text-sm text-slate-500">{staff.role}</p>
+                    <p className="text-xs text-slate-400">{staff.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <Badge className="bg-green-100 text-green-700">{staff.status}</Badge>
+                    <p className="text-xs text-slate-400 mt-1">Since {staff.hireDate}</p>
+                  </div>
+                  <Button variant="outline" size="sm">Edit</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Permissions</CardTitle>
+          <CardDescription>Configure what each role can access</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[
+              { role: 'Owner/Admin', permissions: ['Full Access', 'Staff Management', 'Financial Reports', 'Practice Settings', 'Compliance'] },
+              { role: 'Doctor/Chiropractor', permissions: ['Patient Records', 'SOAP Notes', 'Scheduling', 'Communication', 'Personal Analytics'] },
+              { role: 'Front Desk', permissions: ['Scheduling', 'Patient Check-in', 'Billing/Payments', 'Communication'] },
+            ].map((item, i) => (
+              <div key={i} className="p-4 border rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-semibold text-slate-900">{item.role}</p>
+                  <Button variant="ghost" size="sm">Edit Permissions</Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {item.permissions.map((perm, j) => (
+                    <Badge key={j} variant="outline" className="bg-slate-50">{perm}</Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Practice Settings View - Owner/Admin only
+function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeof getPracticeData> }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Practice Settings</h1>
+        <p className="text-slate-500">Configure your practice information and preferences</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Practice Information</CardTitle>
+            <CardDescription>Basic details about your practice</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700">Practice Name</label>
+              <input type="text" className="w-full mt-1 p-2 border rounded-lg" defaultValue={practiceData.practiceName} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Address</label>
+              <input type="text" className="w-full mt-1 p-2 border rounded-lg" defaultValue="123 Wellness Way, Suite 100" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700">Phone</label>
+                <input type="text" className="w-full mt-1 p-2 border rounded-lg" defaultValue="(555) 123-4567" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">Email</label>
+                <input type="text" className="w-full mt-1 p-2 border rounded-lg" defaultValue="info@unwindchiro.com" />
+              </div>
+            </div>
+            <Button className={`bg-gradient-to-r ${practiceData.practiceColor}`}>Save Changes</Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Business Hours</CardTitle>
+            <CardDescription>Set your operating hours</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
+              <div key={day} className="flex items-center justify-between">
+                <span className="text-sm font-medium w-24">{day}</span>
+                <div className="flex items-center gap-2">
+                  <input type="time" className="p-1 border rounded text-sm" defaultValue="08:00" />
+                  <span>to</span>
+                  <input type="time" className="p-1 border rounded text-sm" defaultValue="18:00" />
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-sm font-medium w-24">Saturday</span>
+              <span className="text-sm">Closed</span>
+            </div>
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-sm font-medium w-24">Sunday</span>
+              <span className="text-sm">Closed</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing Settings</CardTitle>
+            <CardDescription>Configure payment and billing options</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium">Online Payments</p>
+                <p className="text-sm text-slate-500">Accept credit cards via Stripe</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium">Auto-send Invoices</p>
+                <p className="text-sm text-slate-500">Email invoices after visits</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium">Payment Reminders</p>
+                <p className="text-sm text-slate-500">Send reminders for overdue balances</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Default Visit Fee</label>
+              <input type="text" className="w-full mt-1 p-2 border rounded-lg" defaultValue="$75.00" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Settings</CardTitle>
+            <CardDescription>Configure alerts and reminders</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium">Appointment Reminders</p>
+                <p className="text-sm text-slate-500">Send SMS/email reminders to patients</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium">New Patient Alerts</p>
+                <p className="text-sm text-slate-500">Notify staff of new patient bookings</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium">Daily Summary</p>
+                <p className="text-sm text-slate-500">Email daily schedule summary</p>
+              </div>
+              <Switch />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Integrations</CardTitle>
+            <CardDescription>Connect with third-party services</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Stripe</p>
+                    <p className="text-xs text-slate-500">Payment processing</p>
+                  </div>
+                </div>
+                <Badge className="bg-yellow-100 text-yellow-700">Not Connected</Badge>
+              </div>
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">QuickBooks</p>
+                    <p className="text-xs text-slate-500">Accounting</p>
+                  </div>
+                </div>
+                <Badge className="bg-yellow-100 text-yellow-700">Not Connected</Badge>
+              </div>
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Mailchimp</p>
+                    <p className="text-xs text-slate-500">Email marketing</p>
+                  </div>
+                </div>
+                <Badge className="bg-yellow-100 text-yellow-700">Not Connected</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
