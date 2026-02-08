@@ -57,7 +57,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 
-type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication' | 'staff-management' | 'practice-settings'
+type DemoView = 'dashboard' | 'scheduling' | 'patients' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication' | 'staff-management' | 'practice-settings'
 type PracticeType = 'chiropractic' | 'physical-therapy'
 type UserRole = 'provider' | 'patient'
 type StaffRole = 'owner' | 'doctor' | 'front-desk'
@@ -67,12 +67,13 @@ const getRoleNavigation = (role: StaffRole) => {
   const baseNav = [
     { id: 'dashboard', icon: 'BarChart3', label: 'Dashboard' },
     { id: 'scheduling', icon: 'Calendar', label: 'Scheduling' },
+    { id: 'patients', icon: 'Users', label: 'Patients' },
   ]
   
   if (role === 'owner') {
     return [
       ...baseNav,
-      { id: 'patient', icon: 'Users', label: 'Patient Visit' },
+      { id: 'patient', icon: 'FileText', label: 'Patient Visit' },
       { id: 'billing', icon: 'DollarSign', label: 'Billing & Finance' },
       { id: 'communication', icon: 'MessageSquare', label: 'Communication' },
       { id: 'analytics', icon: 'TrendingUp', label: 'Analytics' },
@@ -85,7 +86,7 @@ const getRoleNavigation = (role: StaffRole) => {
   if (role === 'doctor') {
     return [
       ...baseNav,
-      { id: 'patient', icon: 'Users', label: 'Patient Visit' },
+      { id: 'patient', icon: 'FileText', label: 'Patient Visit' },
       { id: 'communication', icon: 'MessageSquare', label: 'Communication' },
       { id: 'analytics', icon: 'TrendingUp', label: 'My Analytics' },
     ]
@@ -382,6 +383,16 @@ function DemoApp() {
                   setSelectedPatient(patient)
                   setCurrentView('patient')
                 }
+              }}
+            />
+          )}
+          {currentView === 'patients' && (
+            <PatientsListView 
+              practiceType={practiceType}
+              practiceData={practiceData}
+              onSelectPatient={(patient) => {
+                setSelectedPatient(patient)
+                setCurrentView('patient')
               }}
             />
           )}
@@ -1021,7 +1032,181 @@ function SchedulingView({
   )
 }
 
-function PatientView({ 
+function PatientsListView({ 
+  practiceData,
+  onSelectPatient
+}: { 
+  practiceType: PracticeType
+  practiceData: ReturnType<typeof getPracticeData>
+  onSelectPatient: (patient: typeof practiceData.samplePatients[0]) => void
+}) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
+  
+  const allPatients = [
+    { id: 1, name: 'John Doe', phone: '(555) 123-4567', email: 'john.doe@email.com', lastVisit: 'Feb 3, 2026', nextAppt: 'Feb 10, 2026', balance: 0, status: 'active', visits: 12, condition: 'Lower back pain' },
+    { id: 2, name: 'Maria Lopez', phone: '(555) 234-5678', email: 'maria.lopez@email.com', lastVisit: 'Jan 28, 2026', nextAppt: 'Feb 4, 2026', balance: 75, status: 'active', visits: 8, condition: 'Neck pain' },
+    { id: 3, name: 'Mark Chen', phone: '(555) 345-6789', email: 'mark.chen@email.com', lastVisit: 'Feb 1, 2026', nextAppt: 'Feb 8, 2026', balance: 0, status: 'active', visits: 24, condition: 'Wellness care' },
+    { id: 4, name: 'Lisa Patel', phone: '(555) 456-7890', email: 'lisa.patel@email.com', lastVisit: 'Jan 25, 2026', nextAppt: 'Feb 5, 2026', balance: 150, status: 'active', visits: 6, condition: 'Sciatica' },
+    { id: 5, name: 'Brian Evans', phone: '(555) 567-8901', email: 'brian.evans@email.com', lastVisit: 'Dec 15, 2025', nextAppt: '-', balance: 0, status: 'inactive', visits: 3, condition: 'Sports injury' },
+    { id: 6, name: 'Sarah Kim', phone: '(555) 678-9012', email: 'sarah.kim@email.com', lastVisit: 'Feb 2, 2026', nextAppt: 'Feb 9, 2026', balance: 0, status: 'active', visits: 15, condition: 'Headaches' },
+    { id: 7, name: 'David Wilson', phone: '(555) 789-0123', email: 'david.wilson@email.com', lastVisit: 'Jan 20, 2026', nextAppt: 'Feb 6, 2026', balance: 225, status: 'active', visits: 4, condition: 'Shoulder pain' },
+    { id: 8, name: 'Jennifer Lee', phone: '(555) 890-1234', email: 'jennifer.lee@email.com', lastVisit: 'Nov 10, 2025', nextAppt: '-', balance: 50, status: 'inactive', visits: 7, condition: 'Hip pain' },
+    { id: 9, name: 'Michael Brown', phone: '(555) 901-2345', email: 'michael.brown@email.com', lastVisit: 'Feb 3, 2026', nextAppt: 'Feb 17, 2026', balance: 0, status: 'active', visits: 20, condition: 'Maintenance' },
+    { id: 10, name: 'Emily Davis', phone: '(555) 012-3456', email: 'emily.davis@email.com', lastVisit: 'Jan 30, 2026', nextAppt: 'Feb 13, 2026', balance: 0, status: 'active', visits: 11, condition: 'Posture correction' },
+  ]
+
+  const filteredPatients = allPatients.filter(patient => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         patient.phone.includes(searchTerm)
+    const matchesStatus = statusFilter === 'all' || patient.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Patient Directory</h1>
+          <p className="text-slate-500">Search and manage all patient accounts</p>
+        </div>
+        <Button className={`bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
+          <Users className="w-4 h-4 mr-2" /> Add New Patient
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              <Users className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                All ({allPatients.length})
+              </button>
+              <button
+                onClick={() => setStatusFilter('active')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'active' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                Active ({allPatients.filter(p => p.status === 'active').length})
+              </button>
+              <button
+                onClick={() => setStatusFilter('inactive')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'inactive' ? 'bg-yellow-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                Inactive ({allPatients.filter(p => p.status === 'inactive').length})
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Patient</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Contact</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Condition</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Last Visit</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Next Appt</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Balance</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPatients.map((patient) => (
+                  <tr 
+                    key={patient.id} 
+                    className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => {
+                      const matchedPatient = practiceData.samplePatients.find(p => p.name === patient.name) || practiceData.samplePatients[0]
+                      onSelectPatient({ ...matchedPatient, name: patient.name })
+                    }}
+                  >
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className={`bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
+                            {patient.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-slate-900">{patient.name}</p>
+                          <p className="text-xs text-slate-500">{patient.visits} visits</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="text-sm text-slate-900">{patient.phone}</p>
+                      <p className="text-xs text-slate-500">{patient.email}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="text-sm text-slate-700">{patient.condition}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="text-sm text-slate-700">{patient.lastVisit}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className={`text-sm ${patient.nextAppt === '-' ? 'text-slate-400' : 'text-slate-700'}`}>
+                        {patient.nextAppt}
+                      </p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className={`text-sm font-medium ${patient.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        ${patient.balance.toFixed(2)}
+                      </p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <Badge className={patient.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                        {patient.status}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const matchedPatient = practiceData.samplePatients.find(p => p.name === patient.name) || practiceData.samplePatients[0]
+                            onSelectPatient({ ...matchedPatient, name: patient.name })
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredPatients.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500">No patients found matching your search.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function PatientView({
   practiceType,
   practiceData,
   patient, 
