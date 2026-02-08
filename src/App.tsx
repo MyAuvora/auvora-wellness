@@ -54,7 +54,8 @@ import {
   MicOff,
   Square,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Plus
 } from 'lucide-react'
 
 type DemoView = 'dashboard' | 'scheduling' | 'patients' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication' | 'staff-management' | 'practice-settings'
@@ -3268,7 +3269,7 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
   )
 }
 
-// Patient Portal Component - Mobile-friendly patient-facing interface
+// Patient Portal Component - Redesigned for better user experience
 function PatientPortal({
   practiceData,
   onSwitchToProvider
@@ -3276,19 +3277,23 @@ function PatientPortal({
   practiceData: ReturnType<typeof getPracticeData>
   onSwitchToProvider: () => void
 }) {
-  const [activeTab, setActiveTab] = useState<'home' | 'appointments' | 'messages' | 'records' | 'billing'>('home')
+  const [activeTab, setActiveTab] = useState<'home' | 'appointments' | 'messages' | 'records' | 'billing' | 'profile'>('home')
   const [showMessageCompose, setShowMessageCompose] = useState(false)
   const [messageText, setMessageText] = useState('')
+  const [showBookingModal, setShowBookingModal] = useState(false)
 
   // Sample patient data
   const patientInfo = {
     name: 'John Doe',
     email: 'john.doe@email.com',
     phone: '(555) 123-4567',
-    dob: '1985-03-15',
+    dob: 'March 15, 1985',
+    address: '123 Main Street, Tampa, FL 33601',
     nextAppointment: { date: 'Feb 10, 2026', time: '10:30 AM', type: 'Adjustment', provider: 'Dr. Jamie Smith' },
     balance: 75.00,
-    lastVisit: 'Jan 28, 2026'
+    lastVisit: 'Jan 28, 2026',
+    memberSince: 'January 2026',
+    treatmentProgress: 75
   }
 
   const upcomingAppointments = [
@@ -3322,194 +3327,287 @@ function PatientPortal({
     { id: 3, date: 'Jan 3, 2026', description: 'New Patient Exam + X-Rays', amount: 350.00, status: 'paid', insurance: 'Blue Cross paid $280' },
   ]
 
+  const unreadCount = messages.filter(m => m.unread).length
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Patient Portal Header */}
-      <header className={`bg-gradient-to-r ${practiceData.practiceColor} text-white sticky top-0 z-50`}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <Heart className="w-5 h-5" />
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {/* Modern Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${practiceData.practiceColor} flex items-center justify-center`}>
+                <Heart className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-slate-900">{practiceData.practiceName}</h1>
+                <p className="text-xs text-slate-500">Patient Portal</p>
+              </div>
             </div>
-            <div>
-              <span className="text-lg font-bold">{practiceData.practiceName}</span>
-              <p className="text-xs text-white/80">Patient Portal</p>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setActiveTab('messages')}
+                className="relative p-2 rounded-full hover:bg-slate-100 transition-colors"
+              >
+                <Bell className="w-5 h-5 text-slate-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-slate-100 transition-colors"
+              >
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-sm`}>JD</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-slate-700 hidden sm:block">John</span>
+              </button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onSwitchToProvider}
+                className="text-slate-500 hover:text-slate-700 text-xs hidden sm:flex"
+              >
+                Provider View
+              </Button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onSwitchToProvider}
-              className="text-white/80 hover:text-white hover:bg-white/20 text-xs"
-            >
-              Provider View
-            </Button>
-            <Avatar className="w-8 h-8 border-2 border-white/30">
-              <AvatarFallback className="bg-white/20 text-white text-sm">JD</AvatarFallback>
-            </Avatar>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="pb-20">
-        {/* Home Tab */}
+      <main className="max-w-4xl mx-auto pb-24">
+        {/* Home Tab - Redesigned Dashboard */}
         {activeTab === 'home' && (
-          <div className="p-4 space-y-4">
-            {/* Welcome Card */}
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16">
-                    <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-xl`}>JD</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">Welcome back, John!</h2>
-                    <p className="text-sm text-slate-500">Last visit: {patientInfo.lastVisit}</p>
+          <div className="p-4 space-y-6">
+            {/* Hero Welcome Section */}
+            <div className={`rounded-2xl bg-gradient-to-r ${practiceData.practiceColor} p-6 text-white`}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-white/80 text-sm">Welcome back,</p>
+                  <h2 className="text-2xl font-bold mt-1">John Doe</h2>
+                  <p className="text-white/80 text-sm mt-2">Your wellness journey is {patientInfo.treatmentProgress}% complete</p>
+                  <div className="mt-3 bg-white/20 rounded-full h-2 w-48">
+                    <div 
+                      className="bg-white rounded-full h-2 transition-all duration-500" 
+                      style={{ width: `${patientInfo.treatmentProgress}%` }}
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Next Appointment Card */}
-            <Card className={`border-0 shadow-md bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-white/80">Next Appointment</p>
-                    <p className="text-2xl font-bold">{patientInfo.nextAppointment.date}</p>
-                    <p className="text-sm">{patientInfo.nextAppointment.time} - {patientInfo.nextAppointment.type}</p>
-                    <p className="text-xs text-white/80 mt-1">with {patientInfo.nextAppointment.provider}</p>
-                  </div>
-                  <div className="text-right">
-                    <Button variant="secondary" size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Reschedule
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('appointments')}>
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
-                    <Calendar className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <p className="font-medium text-slate-900">Book Appointment</p>
-                  <p className="text-xs text-slate-500">Schedule your next visit</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('messages')}>
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2 relative">
-                    <MessageSquare className="w-6 h-6 text-purple-600" />
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">1</span>
-                  </div>
-                  <p className="font-medium text-slate-900">Messages</p>
-                  <p className="text-xs text-slate-500">1 unread message</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('records')}>
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2">
-                    <FileText className="w-6 h-6 text-green-600" />
-                  </div>
-                  <p className="font-medium text-slate-900">Health Records</p>
-                  <p className="text-xs text-slate-500">View your records</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('billing')}>
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-2">
-                    <DollarSign className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <p className="font-medium text-slate-900">Pay Balance</p>
-                  <p className="text-xs text-slate-500">${patientInfo.balance.toFixed(2)} due</p>
-                </CardContent>
-              </Card>
+                <Avatar className="w-16 h-16 border-4 border-white/30">
+                  <AvatarFallback className="bg-white/20 text-white text-xl font-bold">JD</AvatarFallback>
+                </Avatar>
+              </div>
             </div>
 
-            {/* Recent Activity */}
+            {/* Next Appointment - Prominent Card */}
+            {patientInfo.nextAppointment && (
+              <Card className="border-0 shadow-lg overflow-hidden">
+                <div className="flex">
+                  <div className={`w-2 bg-gradient-to-b ${practiceData.practiceColor}`} />
+                  <CardContent className="flex-1 p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-teal-600 uppercase tracking-wide">Next Appointment</p>
+                        <p className="text-xl font-bold text-slate-900 mt-1">{patientInfo.nextAppointment.date}</p>
+                        <p className="text-slate-600">{patientInfo.nextAppointment.time}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge className="bg-teal-100 text-teal-700">{patientInfo.nextAppointment.type}</Badge>
+                          <span className="text-sm text-slate-500">with {patientInfo.nextAppointment.provider}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button variant="outline" size="sm" className="text-xs">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          Reschedule
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50">
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
+            )}
+
+            {/* Quick Actions - Larger, More Accessible */}
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => setShowBookingModal(true)}
+                  className={`p-5 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-left hover:shadow-lg transition-all hover:scale-[1.02]`}
+                >
+                  <Calendar className="w-8 h-8 mb-3 opacity-90" />
+                  <p className="font-semibold text-lg">Book Appointment</p>
+                  <p className="text-sm text-white/80 mt-1">Schedule your next visit</p>
+                </button>
+                <button 
+                  onClick={() => setActiveTab('messages')}
+                  className="p-5 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white text-left hover:shadow-lg transition-all hover:scale-[1.02] relative"
+                >
+                  <MessageSquare className="w-8 h-8 mb-3 opacity-90" />
+                  <p className="font-semibold text-lg">Messages</p>
+                  <p className="text-sm text-white/80 mt-1">Contact your care team</p>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-4 right-4 w-6 h-6 bg-white text-purple-600 text-sm font-bold rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('records')}
+                  className="p-5 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white text-left hover:shadow-lg transition-all hover:scale-[1.02]"
+                >
+                  <FileText className="w-8 h-8 mb-3 opacity-90" />
+                  <p className="font-semibold text-lg">Health Records</p>
+                  <p className="text-sm text-white/80 mt-1">View your documents</p>
+                </button>
+                <button 
+                  onClick={() => setActiveTab('billing')}
+                  className="p-5 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white text-left hover:shadow-lg transition-all hover:scale-[1.02]"
+                >
+                  <DollarSign className="w-8 h-8 mb-3 opacity-90" />
+                  <p className="font-semibold text-lg">Pay Balance</p>
+                  <p className="text-sm text-white/80 mt-1">${patientInfo.balance.toFixed(2)} due</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Recent Messages */}
             <Card className="border-0 shadow-md">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Recent Messages</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveTab('messages')} className="text-teal-600">
+                    View All
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-1">
                 {messages.slice(0, 2).map((msg) => (
-                  <div key={msg.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer" onClick={() => setActiveTab('messages')}>
-                    <div className={`w-2 h-2 rounded-full mt-2 ${msg.unread ? 'bg-blue-500' : 'bg-slate-300'}`} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-900">{msg.subject}</p>
-                      <p className="text-xs text-slate-500">{msg.from} • {msg.date}</p>
+                  <div 
+                    key={msg.id} 
+                    className={`flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-colors ${msg.unread ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-slate-50'}`}
+                    onClick={() => setActiveTab('messages')}
+                  >
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-sm`}>
+                        {msg.from.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-slate-900 truncate">{msg.subject}</p>
+                        {msg.unread && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
+                      </div>
+                      <p className="text-sm text-slate-500 truncate">{msg.from} • {msg.date}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+
+            {/* Practice Info Card */}
+            <Card className="border-0 shadow-md bg-slate-50">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${practiceData.practiceColor} flex items-center justify-center`}>
+                    <Phone className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">Need Help?</p>
+                    <p className="text-sm text-slate-500">Call us at (555) 123-4567</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Call Now
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Appointments Tab */}
+        {/* Appointments Tab - Cleaner Layout */}
         {activeTab === 'appointments' && (
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Appointments</h2>
-              <Button className={`bg-gradient-to-r ${practiceData.practiceColor}`}>
-                <Calendar className="w-4 h-4 mr-2" />
+              <h2 className="text-2xl font-bold text-slate-900">My Appointments</h2>
+              <Button className={`bg-gradient-to-r ${practiceData.practiceColor}`} onClick={() => setShowBookingModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
                 Book New
               </Button>
             </div>
 
-            {/* Upcoming */}
+            {/* Upcoming Appointments */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-500 uppercase mb-2">Upcoming</h3>
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Upcoming</h3>
               <div className="space-y-3">
-                {upcomingAppointments.map((apt) => (
-                  <Card key={apt.id} className="border-0 shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-slate-900">{apt.date}</p>
-                          <p className="text-sm text-slate-600">{apt.time} - {apt.type}</p>
-                          <p className="text-xs text-slate-500">{apt.provider}</p>
-                        </div>
-                        <div className="text-right">
-                          <Badge className={apt.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                            {apt.status}
-                          </Badge>
-                          <div className="flex gap-2 mt-2">
-                            <Button variant="outline" size="sm" className="text-xs">Reschedule</Button>
-                            <Button variant="outline" size="sm" className="text-xs text-red-600 border-red-200">Cancel</Button>
+                {upcomingAppointments.map((apt, index) => (
+                  <Card key={apt.id} className={`border-0 shadow-md overflow-hidden ${index === 0 ? 'ring-2 ring-teal-500' : ''}`}>
+                    <div className="flex">
+                      <div className={`w-1.5 ${index === 0 ? 'bg-teal-500' : 'bg-slate-200'}`} />
+                      <CardContent className="flex-1 p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <p className="text-2xl font-bold text-slate-900">{apt.date.split(' ')[1].replace(',', '')}</p>
+                              <p className="text-xs text-slate-500 uppercase">{apt.date.split(' ')[0]}</p>
+                            </div>
+                            <div className="h-12 w-px bg-slate-200" />
+                            <div>
+                              <p className="font-semibold text-slate-900">{apt.type}</p>
+                              <p className="text-sm text-slate-500">{apt.time} • {apt.provider}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge className={apt.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                              {apt.status}
+                            </Badge>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Calendar className="w-4 h-4 text-slate-500" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <X className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
+                      </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
             </div>
 
-            {/* Past */}
+            {/* Past Appointments */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-500 uppercase mb-2">Past Visits</h3>
-              <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Past Visits</h3>
+              <div className="space-y-2">
                 {pastAppointments.map((apt) => (
-                  <Card key={apt.id} className="border-0 shadow-sm bg-slate-50">
+                  <Card key={apt.id} className="border-0 shadow-sm bg-slate-50/50">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-slate-700">{apt.date}</p>
-                          <p className="text-sm text-slate-600">{apt.time} - {apt.type}</p>
-                          <p className="text-xs text-slate-500 mt-1">{apt.notes}</p>
+                        <div className="flex items-center gap-4">
+                          <div className="text-center opacity-60">
+                            <p className="text-lg font-bold text-slate-700">{apt.date.split(' ')[1].replace(',', '')}</p>
+                            <p className="text-xs text-slate-500 uppercase">{apt.date.split(' ')[0]}</p>
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-700">{apt.type}</p>
+                            <p className="text-sm text-slate-500">{apt.notes}</p>
+                          </div>
                         </div>
                         <Button variant="ghost" size="sm" onClick={() => setActiveTab('records')}>
-                          <FileText className="w-4 h-4 mr-1" />
-                          View Notes
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
                         </Button>
                       </div>
                     </CardContent>
@@ -3520,35 +3618,39 @@ function PatientPortal({
           </div>
         )}
 
-        {/* Messages Tab */}
+        {/* Messages Tab - Modern Chat Style */}
         {activeTab === 'messages' && (
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Messages</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Messages</h2>
               <Button className={`bg-gradient-to-r ${practiceData.practiceColor}`} onClick={() => setShowMessageCompose(true)}>
-                <Send className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 mr-2" />
                 New Message
               </Button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {messages.map((msg) => (
-                <Card key={msg.id} className={`border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${msg.unread ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}>
+                <Card 
+                  key={msg.id} 
+                  className={`border-0 shadow-sm cursor-pointer hover:shadow-md transition-all ${msg.unread ? 'bg-blue-50 ring-1 ring-blue-200' : ''}`}
+                >
                   <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-sm`}>
+                    <div className="flex items-start gap-4">
+                      <Avatar className="w-12 h-12">
+                        <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white`}>
                           {msg.from.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
                           <p className="font-semibold text-slate-900">{msg.from}</p>
                           <p className="text-xs text-slate-500">{msg.date}</p>
                         </div>
-                        <p className="text-sm font-medium text-slate-700">{msg.subject}</p>
-                        <p className="text-sm text-slate-500 mt-1">{msg.preview}</p>
+                        <p className="font-medium text-slate-800">{msg.subject}</p>
+                        <p className="text-sm text-slate-500 mt-1 line-clamp-2">{msg.preview}</p>
                       </div>
+                      {msg.unread && <span className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0 mt-2" />}
                     </div>
                   </CardContent>
                 </Card>
@@ -3557,177 +3659,209 @@ function PatientPortal({
 
             {/* Compose Message Modal */}
             {showMessageCompose && (
-              <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
-                <div className="bg-white w-full max-w-lg rounded-t-2xl p-4 space-y-4">
-                  <div className="flex items-center justify-between">
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
                     <h3 className="text-lg font-bold">New Message</h3>
                     <Button variant="ghost" size="sm" onClick={() => setShowMessageCompose(false)}>
                       <X className="w-5 h-5" />
                     </Button>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">To</label>
-                    <select className="w-full mt-1 p-2 border rounded-lg">
-                      <option>Dr. Jamie Smith</option>
-                      <option>Front Desk</option>
-                      <option>Billing Department</option>
-                    </select>
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">To</label>
+                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50 focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                        <option>Dr. Jamie Smith</option>
+                        <option>Front Desk</option>
+                        <option>Billing Department</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Subject</label>
+                      <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50 focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="Enter subject..." />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Message</label>
+                      <textarea 
+                        className="w-full mt-1 p-3 border rounded-xl bg-slate-50 h-32 focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none" 
+                        placeholder="Type your message..."
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">Subject</label>
-                    <input type="text" className="w-full mt-1 p-2 border rounded-lg" placeholder="Enter subject..." />
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                    <Button className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send Message
+                    </Button>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">Message</label>
-                    <textarea 
-                      className="w-full mt-1 p-2 border rounded-lg h-32" 
-                      placeholder="Type your message..."
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                    />
-                  </div>
-                  <Button className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}>
-                    <Send className="w-4 h-4 mr-2" />
-                    Send Message
-                  </Button>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Health Records Tab */}
+        {/* Health Records Tab - Better Organization */}
         {activeTab === 'records' && (
-          <div className="p-4 space-y-4">
-            <h2 className="text-xl font-bold text-slate-900">Health Records</h2>
+          <div className="p-4 space-y-6">
+            <h2 className="text-2xl font-bold text-slate-900">Health Records</h2>
 
-            <div className="space-y-3">
-              {healthRecords.map((record) => (
-                <Card key={record.id} className="border-0 shadow-sm">
+            {/* Record Categories */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { type: 'SOAP Notes', count: 3, icon: FileText, color: 'blue' },
+                { type: 'X-Rays', count: 1, icon: Eye, color: 'purple' },
+                { type: 'Treatment Plans', count: 1, icon: TrendingUp, color: 'green' },
+                { type: 'Forms', count: 2, icon: FileText, color: 'slate' },
+              ].map((cat) => (
+                <Card key={cat.type} className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-all">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        record.type === 'SOAP Note' ? 'bg-blue-100' :
-                        record.type === 'X-Ray Report' ? 'bg-purple-100' :
-                        record.type === 'Treatment Plan' ? 'bg-green-100' : 'bg-slate-100'
-                      }`}>
-                        <FileText className={`w-6 h-6 ${
-                          record.type === 'SOAP Note' ? 'text-blue-600' :
-                          record.type === 'X-Ray Report' ? 'text-purple-600' :
-                          record.type === 'Treatment Plan' ? 'text-green-600' : 'text-slate-600'
-                        }`} />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900">{record.type}</p>
-                        <p className="text-sm text-slate-600">{record.description}</p>
-                        <p className="text-xs text-slate-500">{record.date} • {record.provider}</p>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
+                    <div className={`w-10 h-10 rounded-lg bg-${cat.color}-100 flex items-center justify-center mb-2`}>
+                      <cat.icon className={`w-5 h-5 text-${cat.color}-600`} />
                     </div>
+                    <p className="font-medium text-slate-900">{cat.type}</p>
+                    <p className="text-sm text-slate-500">{cat.count} documents</p>
                   </CardContent>
                 </Card>
               ))}
             </div>
 
+            {/* All Records List */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">All Documents</h3>
+              <div className="space-y-2">
+                {healthRecords.map((record) => (
+                  <Card key={record.id} className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          record.type === 'SOAP Note' ? 'bg-blue-100' :
+                          record.type === 'X-Ray Report' ? 'bg-purple-100' :
+                          record.type === 'Treatment Plan' ? 'bg-green-100' : 'bg-slate-100'
+                        }`}>
+                          <FileText className={`w-6 h-6 ${
+                            record.type === 'SOAP Note' ? 'text-blue-600' :
+                            record.type === 'X-Ray Report' ? 'text-purple-600' :
+                            record.type === 'Treatment Plan' ? 'text-green-600' : 'text-slate-600'
+                          }`} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-900">{record.type}</p>
+                          <p className="text-sm text-slate-600">{record.description}</p>
+                          <p className="text-xs text-slate-400 mt-1">{record.date}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
             {/* Request Records */}
-            <Card className="border-0 shadow-sm bg-slate-50">
-              <CardContent className="p-4 text-center">
-                <Download className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <p className="font-medium text-slate-700">Need your records?</p>
-                <p className="text-sm text-slate-500 mb-3">Request a copy of your complete health records</p>
+            <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
+              <CardContent className="p-6 text-center">
+                <Download className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                <p className="font-semibold text-slate-700">Need a copy of your records?</p>
+                <p className="text-sm text-slate-500 mb-4">Request your complete health records</p>
                 <Button variant="outline">Request Records</Button>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Billing Tab */}
+        {/* Billing Tab - Cleaner Design */}
         {activeTab === 'billing' && (
-          <div className="p-4 space-y-4">
-            <h2 className="text-xl font-bold text-slate-900">Billing & Payments</h2>
+          <div className="p-4 space-y-6">
+            <h2 className="text-2xl font-bold text-slate-900">Billing & Payments</h2>
 
             {/* Balance Card */}
-            <Card className={`border-0 shadow-md bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-white/80">Current Balance</p>
-                    <p className="text-3xl font-bold">${patientInfo.balance.toFixed(2)}</p>
-                  </div>
-                  <Button variant="secondary" className="bg-white text-teal-600 hover:bg-white/90">
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    Pay Now
-                  </Button>
-                </div>
-              </CardContent>
+            <Card className={`border-0 shadow-lg overflow-hidden`}>
+              <div className={`bg-gradient-to-r ${practiceData.practiceColor} p-6 text-white`}>
+                <p className="text-white/80 text-sm">Current Balance</p>
+                <p className="text-4xl font-bold mt-1">${patientInfo.balance.toFixed(2)}</p>
+                <Button className="mt-4 bg-white text-teal-600 hover:bg-white/90">
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Pay Now
+                </Button>
+              </div>
             </Card>
 
             {/* Payment Methods */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-2">
+            <Card className="border-0 shadow-md">
+              <CardHeader>
                 <CardTitle className="text-lg">Payment Methods</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-6 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">VISA</div>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-md flex items-center justify-center text-white text-xs font-bold">
+                      VISA
+                    </div>
                     <div>
-                      <p className="text-sm font-medium">•••• •••• •••• 4242</p>
+                      <p className="font-medium">•••• •••• •••• 4242</p>
                       <p className="text-xs text-slate-500">Expires 12/27</p>
                     </div>
                   </div>
                   <Badge className="bg-green-100 text-green-700">Default</Badge>
                 </div>
                 <Button variant="outline" className="w-full">
-                  <DollarSign className="w-4 h-4 mr-2" />
+                  <Plus className="w-4 h-4 mr-2" />
                   Add Payment Method
                 </Button>
               </CardContent>
             </Card>
 
             {/* Billing History */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-2">
+            <Card className="border-0 shadow-md">
+              <CardHeader>
                 <CardTitle className="text-lg">Billing History</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {billingHistory.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 border-b last:border-0">
-                    <div>
-                      <p className="font-medium text-slate-900">{item.description}</p>
-                      <p className="text-xs text-slate-500">{item.date}</p>
-                      <p className="text-xs text-slate-400">{item.insurance}</p>
+              <CardContent>
+                <div className="space-y-4">
+                  {billingHistory.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0">
+                      <div>
+                        <p className="font-medium text-slate-900">{item.description}</p>
+                        <p className="text-sm text-slate-500">{item.date}</p>
+                        <p className="text-xs text-slate-400">{item.insurance}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-lg">${item.amount.toFixed(2)}</p>
+                        <Badge className={item.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                          {item.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">${item.amount.toFixed(2)}</p>
-                      <Badge className={item.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                        {item.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
             {/* Insurance Info */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-2">
+            <Card className="border-0 shadow-md">
+              <CardHeader>
                 <CardTitle className="text-lg">Insurance Information</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
+                <div className="space-y-3">
+                  <div className="flex justify-between py-2 border-b">
                     <span className="text-slate-500">Provider</span>
                     <span className="font-medium">Blue Cross Blue Shield</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between py-2 border-b">
                     <span className="text-slate-500">Member ID</span>
                     <span className="font-medium">XYZ123456789</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between py-2">
                     <span className="text-slate-500">Group Number</span>
                     <span className="font-medium">GRP-98765</span>
                   </div>
@@ -3737,31 +3871,148 @@ function PatientPortal({
             </Card>
           </div>
         )}
+
+        {/* Profile Tab - New Addition */}
+        {activeTab === 'profile' && (
+          <div className="p-4 space-y-6">
+            <div className="text-center py-6">
+              <Avatar className="w-24 h-24 mx-auto mb-4">
+                <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-3xl`}>JD</AvatarFallback>
+              </Avatar>
+              <h2 className="text-2xl font-bold text-slate-900">{patientInfo.name}</h2>
+              <p className="text-slate-500">Member since {patientInfo.memberSince}</p>
+            </div>
+
+            <Card className="border-0 shadow-md">
+              <CardHeader>
+                <CardTitle className="text-lg">Personal Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-slate-500">Email</span>
+                  <span className="font-medium">{patientInfo.email}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-slate-500">Phone</span>
+                  <span className="font-medium">{patientInfo.phone}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <span className="text-slate-500">Date of Birth</span>
+                  <span className="font-medium">{patientInfo.dob}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-slate-500">Address</span>
+                  <span className="font-medium text-right">{patientInfo.address}</span>
+                </div>
+                <Button variant="outline" className="w-full mt-2">Edit Profile</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-md">
+              <CardHeader>
+                <CardTitle className="text-lg">Preferences</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Appointment Reminders</p>
+                    <p className="text-sm text-slate-500">Receive SMS and email reminders</p>
+                  </div>
+                  <div className="w-12 h-6 bg-teal-500 rounded-full relative cursor-pointer">
+                    <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Marketing Communications</p>
+                    <p className="text-sm text-slate-500">Receive wellness tips and offers</p>
+                  </div>
+                  <div className="w-12 h-6 bg-slate-300 rounded-full relative cursor-pointer">
+                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50">
+              Sign Out
+            </Button>
+          </div>
+        )}
       </main>
 
-      {/* Bottom Navigation - Mobile Style */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-50">
-        <div className="flex items-center justify-around">
+      {/* Booking Modal */}
+      {showBookingModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-bold">Book Appointment</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowBookingModal(false)}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700">Appointment Type</label>
+                <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                  <option>Adjustment</option>
+                  <option>Wellness Visit</option>
+                  <option>Re-exam</option>
+                  <option>Consultation</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">Provider</label>
+                <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                  <option>Dr. Jamie Smith</option>
+                  <option>Dr. Sarah Chen</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">Preferred Date</label>
+                <input type="date" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">Preferred Time</label>
+                <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                  <option>Morning (8am - 12pm)</option>
+                  <option>Afternoon (12pm - 5pm)</option>
+                  <option>Any time</option>
+                </select>
+              </div>
+            </div>
+            <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+              <Button className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`} onClick={() => setShowBookingModal(false)}>
+                Request Appointment
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Navigation - Redesigned */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-4 py-2 z-50">
+        <div className="max-w-md mx-auto flex items-center justify-around">
           {[
             { id: 'home', icon: Heart, label: 'Home' },
             { id: 'appointments', icon: Calendar, label: 'Appointments' },
-            { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 1 },
+            { id: 'messages', icon: MessageSquare, label: 'Messages', badge: unreadCount },
             { id: 'records', icon: FileText, label: 'Records' },
             { id: 'billing', icon: DollarSign, label: 'Billing' },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as typeof activeTab)}
-              className={`flex flex-col items-center py-1 px-3 rounded-lg transition-colors relative ${
+              className={`flex flex-col items-center py-2 px-3 rounded-xl transition-all relative ${
                 activeTab === item.id
-                  ? 'text-teal-600'
+                  ? `text-teal-600 bg-teal-50`
                   : 'text-slate-400 hover:text-slate-600'
               }`}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="text-xs mt-1">{item.label}</span>
-              {item.badge && (
-                <span className="absolute top-0 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              <item.icon className={`w-5 h-5 ${activeTab === item.id ? 'stroke-[2.5]' : ''}`} />
+              <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+              {item.badge && item.badge > 0 && (
+                <span className="absolute -top-1 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                   {item.badge}
                 </span>
               )}
