@@ -58,6 +58,7 @@ import {
 
 type DemoView = 'dashboard' | 'scheduling' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication'
 type PracticeType = 'chiropractic' | 'physical-therapy'
+type UserRole = 'provider' | 'patient'
 
 interface ChatMessage {
   id: number
@@ -136,6 +137,7 @@ function DemoApp() {
   const [practiceType, setPracticeType] = useState<PracticeType>('chiropractic')
   const [currentView, setCurrentView] = useState<DemoView>('dashboard')
   const [showAIAssistant, setShowAIAssistant] = useState(false)
+  const [userRole, setUserRole] = useState<UserRole>('provider')
   
   const practiceData = getPracticeData(practiceType)
   const [selectedPatient, setSelectedPatient] = useState(practiceData.samplePatients[0])
@@ -149,6 +151,16 @@ function DemoApp() {
     setSelectedPatient(newData.samplePatients[0])
     setSoapApproved(false)
     setClaimSubmitted(false)
+  }
+
+  // If patient role, render patient portal
+  if (userRole === 'patient') {
+    return (
+      <PatientPortal 
+        practiceData={practiceData}
+        onSwitchToProvider={() => setUserRole('provider')}
+      />
+    )
   }
 
   return (
@@ -180,6 +192,16 @@ function DemoApp() {
             </div>
           </div>
                     <div className="flex items-center gap-4">
+                      {/* Switch to Patient Portal Button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setUserRole('patient')}
+                        className="text-teal-600 border-teal-300 hover:bg-teal-50"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Patient Portal Demo
+                      </Button>
                       <Button variant="ghost" size="sm" className="text-slate-600">
                         <Bell className="w-4 h-4 mr-2" />
                         <Badge className="bg-red-500 text-white text-xs">3</Badge>
@@ -2200,6 +2222,511 @@ function AIAssistantPanel({
           </Button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Patient Portal Component - Mobile-friendly patient-facing interface
+function PatientPortal({
+  practiceData,
+  onSwitchToProvider
+}: {
+  practiceData: ReturnType<typeof getPracticeData>
+  onSwitchToProvider: () => void
+}) {
+  const [activeTab, setActiveTab] = useState<'home' | 'appointments' | 'messages' | 'records' | 'billing'>('home')
+  const [showMessageCompose, setShowMessageCompose] = useState(false)
+  const [messageText, setMessageText] = useState('')
+
+  // Sample patient data
+  const patientInfo = {
+    name: 'John Doe',
+    email: 'john.doe@email.com',
+    phone: '(555) 123-4567',
+    dob: '1985-03-15',
+    nextAppointment: { date: 'Feb 10, 2026', time: '10:30 AM', type: 'Adjustment', provider: 'Dr. Jamie Smith' },
+    balance: 75.00,
+    lastVisit: 'Jan 28, 2026'
+  }
+
+  const upcomingAppointments = [
+    { id: 1, date: 'Feb 10, 2026', time: '10:30 AM', type: 'Adjustment', provider: 'Dr. Jamie Smith', status: 'confirmed' },
+    { id: 2, date: 'Feb 17, 2026', time: '2:00 PM', type: 'Wellness Visit', provider: 'Dr. Jamie Smith', status: 'confirmed' },
+    { id: 3, date: 'Feb 24, 2026', time: '11:00 AM', type: 'Adjustment', provider: 'Dr. Jamie Smith', status: 'pending' },
+  ]
+
+  const pastAppointments = [
+    { id: 4, date: 'Jan 28, 2026', time: '10:00 AM', type: 'Adjustment', provider: 'Dr. Jamie Smith', notes: 'Lumbar adjustment, feeling better' },
+    { id: 5, date: 'Jan 14, 2026', time: '9:30 AM', type: 'Re-exam', provider: 'Dr. Jamie Smith', notes: 'Progress evaluation, ROM improved' },
+    { id: 6, date: 'Jan 3, 2026', time: '2:00 PM', type: 'New Patient Exam', provider: 'Dr. Jamie Smith', notes: 'Initial evaluation, treatment plan created' },
+  ]
+
+  const messages = [
+    { id: 1, from: 'Dr. Jamie Smith', subject: 'Home Exercise Reminder', date: 'Feb 5, 2026', preview: 'Hi John, just a reminder to continue your stretching exercises...', unread: true },
+    { id: 2, from: 'Front Desk', subject: 'Appointment Confirmation', date: 'Feb 3, 2026', preview: 'Your appointment on Feb 10 at 10:30 AM has been confirmed...', unread: false },
+    { id: 3, from: 'Dr. Jamie Smith', subject: 'Treatment Plan Update', date: 'Jan 28, 2026', preview: 'Based on your progress, I recommend continuing with weekly visits...', unread: false },
+  ]
+
+  const healthRecords = [
+    { id: 1, type: 'SOAP Note', date: 'Jan 28, 2026', provider: 'Dr. Jamie Smith', description: 'Adjustment visit - Lumbar spine' },
+    { id: 2, type: 'X-Ray Report', date: 'Jan 3, 2026', provider: 'Dr. Jamie Smith', description: 'Lumbar spine series' },
+    { id: 3, type: 'Treatment Plan', date: 'Jan 3, 2026', provider: 'Dr. Jamie Smith', description: 'Initial treatment plan - 12 visits' },
+    { id: 4, type: 'Intake Forms', date: 'Jan 3, 2026', provider: 'System', description: 'Patient intake and health history' },
+  ]
+
+  const billingHistory = [
+    { id: 1, date: 'Jan 28, 2026', description: 'Office Visit - Adjustment', amount: 75.00, status: 'pending', insurance: 'Submitted to Blue Cross' },
+    { id: 2, date: 'Jan 14, 2026', description: 'Office Visit - Re-exam', amount: 125.00, status: 'paid', insurance: 'Blue Cross paid $100' },
+    { id: 3, date: 'Jan 3, 2026', description: 'New Patient Exam + X-Rays', amount: 350.00, status: 'paid', insurance: 'Blue Cross paid $280' },
+  ]
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Patient Portal Header */}
+      <header className={`bg-gradient-to-r ${practiceData.practiceColor} text-white sticky top-0 z-50`}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <Heart className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-lg font-bold">{practiceData.practiceName}</span>
+              <p className="text-xs text-white/80">Patient Portal</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onSwitchToProvider}
+              className="text-white/80 hover:text-white hover:bg-white/20 text-xs"
+            >
+              Provider View
+            </Button>
+            <Avatar className="w-8 h-8 border-2 border-white/30">
+              <AvatarFallback className="bg-white/20 text-white text-sm">JD</AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="pb-20">
+        {/* Home Tab */}
+        {activeTab === 'home' && (
+          <div className="p-4 space-y-4">
+            {/* Welcome Card */}
+            <Card className="border-0 shadow-md">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-16 h-16">
+                    <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-xl`}>JD</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Welcome back, John!</h2>
+                    <p className="text-sm text-slate-500">Last visit: {patientInfo.lastVisit}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Next Appointment Card */}
+            <Card className={`border-0 shadow-md bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-white/80">Next Appointment</p>
+                    <p className="text-2xl font-bold">{patientInfo.nextAppointment.date}</p>
+                    <p className="text-sm">{patientInfo.nextAppointment.time} - {patientInfo.nextAppointment.type}</p>
+                    <p className="text-xs text-white/80 mt-1">with {patientInfo.nextAppointment.provider}</p>
+                  </div>
+                  <div className="text-right">
+                    <Button variant="secondary" size="sm" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Reschedule
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('appointments')}>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="font-medium text-slate-900">Book Appointment</p>
+                  <p className="text-xs text-slate-500">Schedule your next visit</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('messages')}>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2 relative">
+                    <MessageSquare className="w-6 h-6 text-purple-600" />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">1</span>
+                  </div>
+                  <p className="font-medium text-slate-900">Messages</p>
+                  <p className="text-xs text-slate-500">1 unread message</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('records')}>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2">
+                    <FileText className="w-6 h-6 text-green-600" />
+                  </div>
+                  <p className="font-medium text-slate-900">Health Records</p>
+                  <p className="text-xs text-slate-500">View your records</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveTab('billing')}>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-2">
+                    <DollarSign className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <p className="font-medium text-slate-900">Pay Balance</p>
+                  <p className="text-xs text-slate-500">${patientInfo.balance.toFixed(2)} due</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <Card className="border-0 shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {messages.slice(0, 2).map((msg) => (
+                  <div key={msg.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer" onClick={() => setActiveTab('messages')}>
+                    <div className={`w-2 h-2 rounded-full mt-2 ${msg.unread ? 'bg-blue-500' : 'bg-slate-300'}`} />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">{msg.subject}</p>
+                      <p className="text-xs text-slate-500">{msg.from} • {msg.date}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Appointments Tab */}
+        {activeTab === 'appointments' && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Appointments</h2>
+              <Button className={`bg-gradient-to-r ${practiceData.practiceColor}`}>
+                <Calendar className="w-4 h-4 mr-2" />
+                Book New
+              </Button>
+            </div>
+
+            {/* Upcoming */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-500 uppercase mb-2">Upcoming</h3>
+              <div className="space-y-3">
+                {upcomingAppointments.map((apt) => (
+                  <Card key={apt.id} className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-900">{apt.date}</p>
+                          <p className="text-sm text-slate-600">{apt.time} - {apt.type}</p>
+                          <p className="text-xs text-slate-500">{apt.provider}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={apt.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                            {apt.status}
+                          </Badge>
+                          <div className="flex gap-2 mt-2">
+                            <Button variant="outline" size="sm" className="text-xs">Reschedule</Button>
+                            <Button variant="outline" size="sm" className="text-xs text-red-600 border-red-200">Cancel</Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Past */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-500 uppercase mb-2">Past Visits</h3>
+              <div className="space-y-3">
+                {pastAppointments.map((apt) => (
+                  <Card key={apt.id} className="border-0 shadow-sm bg-slate-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-700">{apt.date}</p>
+                          <p className="text-sm text-slate-600">{apt.time} - {apt.type}</p>
+                          <p className="text-xs text-slate-500 mt-1">{apt.notes}</p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setActiveTab('records')}>
+                          <FileText className="w-4 h-4 mr-1" />
+                          View Notes
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Messages Tab */}
+        {activeTab === 'messages' && (
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Messages</h2>
+              <Button className={`bg-gradient-to-r ${practiceData.practiceColor}`} onClick={() => setShowMessageCompose(true)}>
+                <Send className="w-4 h-4 mr-2" />
+                New Message
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {messages.map((msg) => (
+                <Card key={msg.id} className={`border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${msg.unread ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback className={`bg-gradient-to-br ${practiceData.practiceColor} text-white text-sm`}>
+                          {msg.from.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-slate-900">{msg.from}</p>
+                          <p className="text-xs text-slate-500">{msg.date}</p>
+                        </div>
+                        <p className="text-sm font-medium text-slate-700">{msg.subject}</p>
+                        <p className="text-sm text-slate-500 mt-1">{msg.preview}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Compose Message Modal */}
+            {showMessageCompose && (
+              <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
+                <div className="bg-white w-full max-w-lg rounded-t-2xl p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold">New Message</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowMessageCompose(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">To</label>
+                    <select className="w-full mt-1 p-2 border rounded-lg">
+                      <option>Dr. Jamie Smith</option>
+                      <option>Front Desk</option>
+                      <option>Billing Department</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">Subject</label>
+                    <input type="text" className="w-full mt-1 p-2 border rounded-lg" placeholder="Enter subject..." />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">Message</label>
+                    <textarea 
+                      className="w-full mt-1 p-2 border rounded-lg h-32" 
+                      placeholder="Type your message..."
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                    />
+                  </div>
+                  <Button className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Message
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Health Records Tab */}
+        {activeTab === 'records' && (
+          <div className="p-4 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">Health Records</h2>
+
+            <div className="space-y-3">
+              {healthRecords.map((record) => (
+                <Card key={record.id} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                        record.type === 'SOAP Note' ? 'bg-blue-100' :
+                        record.type === 'X-Ray Report' ? 'bg-purple-100' :
+                        record.type === 'Treatment Plan' ? 'bg-green-100' : 'bg-slate-100'
+                      }`}>
+                        <FileText className={`w-6 h-6 ${
+                          record.type === 'SOAP Note' ? 'text-blue-600' :
+                          record.type === 'X-Ray Report' ? 'text-purple-600' :
+                          record.type === 'Treatment Plan' ? 'text-green-600' : 'text-slate-600'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900">{record.type}</p>
+                        <p className="text-sm text-slate-600">{record.description}</p>
+                        <p className="text-xs text-slate-500">{record.date} • {record.provider}</p>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Request Records */}
+            <Card className="border-0 shadow-sm bg-slate-50">
+              <CardContent className="p-4 text-center">
+                <Download className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="font-medium text-slate-700">Need your records?</p>
+                <p className="text-sm text-slate-500 mb-3">Request a copy of your complete health records</p>
+                <Button variant="outline">Request Records</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Billing Tab */}
+        {activeTab === 'billing' && (
+          <div className="p-4 space-y-4">
+            <h2 className="text-xl font-bold text-slate-900">Billing & Payments</h2>
+
+            {/* Balance Card */}
+            <Card className={`border-0 shadow-md bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-white/80">Current Balance</p>
+                    <p className="text-3xl font-bold">${patientInfo.balance.toFixed(2)}</p>
+                  </div>
+                  <Button variant="secondary" className="bg-white text-teal-600 hover:bg-white/90">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Pay Now
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Methods */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Payment Methods</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-6 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-bold">VISA</div>
+                    <div>
+                      <p className="text-sm font-medium">•••• •••• •••• 4242</p>
+                      <p className="text-xs text-slate-500">Expires 12/27</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-700">Default</Badge>
+                </div>
+                <Button variant="outline" className="w-full">
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Add Payment Method
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Billing History */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Billing History</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {billingHistory.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border-b last:border-0">
+                    <div>
+                      <p className="font-medium text-slate-900">{item.description}</p>
+                      <p className="text-xs text-slate-500">{item.date}</p>
+                      <p className="text-xs text-slate-400">{item.insurance}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">${item.amount.toFixed(2)}</p>
+                      <Badge className={item.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                        {item.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Insurance Info */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Insurance Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Provider</span>
+                    <span className="font-medium">Blue Cross Blue Shield</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Member ID</span>
+                    <span className="font-medium">XYZ123456789</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Group Number</span>
+                    <span className="font-medium">GRP-98765</span>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full mt-4">Update Insurance</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </main>
+
+      {/* Bottom Navigation - Mobile Style */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-50">
+        <div className="flex items-center justify-around">
+          {[
+            { id: 'home', icon: Heart, label: 'Home' },
+            { id: 'appointments', icon: Calendar, label: 'Appointments' },
+            { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 1 },
+            { id: 'records', icon: FileText, label: 'Records' },
+            { id: 'billing', icon: DollarSign, label: 'Billing' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id as typeof activeTab)}
+              className={`flex flex-col items-center py-1 px-3 rounded-lg transition-colors relative ${
+                activeTab === item.id
+                  ? 'text-teal-600'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="text-xs mt-1">{item.label}</span>
+              {item.badge && (
+                <span className="absolute top-0 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   )
 }
