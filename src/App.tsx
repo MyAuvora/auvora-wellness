@@ -345,10 +345,73 @@ function DemoApp() {
   )
 }
 
-// Component implementations continue in next part due to length...
-// I'll create the remaining view components
+// Daily Aspirations data - wellness-focused positive affirmations
+const dailyAspirations = [
+  { quote: "Every patient you help today is a life you're changing for the better.", author: "Wellness Wisdom" },
+  { quote: "Healing is not just about the body—it's about restoring hope and vitality to every person you touch.", author: "Healthcare Philosophy" },
+  { quote: "Your hands have the power to relieve pain and restore movement. Use that gift with intention.", author: "Chiropractic Insight" },
+  { quote: "The greatest wealth is health. Today, you help others build that wealth.", author: "Virgil" },
+  { quote: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
+  { quote: "Every adjustment, every treatment, every conversation matters. You are making a difference.", author: "Wellness Wisdom" },
+  { quote: "Health is a state of complete harmony of the body, mind, and spirit.", author: "B.K.S. Iyengar" },
+  { quote: "The doctor of the future will give no medicine, but will interest patients in the care of the human frame.", author: "Thomas Edison" },
+  { quote: "Your positive energy and expertise create ripples of wellness in your community.", author: "Healthcare Philosophy" },
+  { quote: "Movement is medicine. Today, you prescribe the best kind.", author: "Wellness Wisdom" },
+  { quote: "Wellness is not a destination—it's a daily practice. You guide that journey.", author: "Healthcare Philosophy" },
+  { quote: "The body has an incredible ability to heal itself. You help unlock that potential.", author: "Chiropractic Insight" },
+  { quote: "A healthy outside starts from the inside.", author: "Robert Urich" },
+  { quote: "Your dedication to patient care is the foundation of a healthier community.", author: "Wellness Wisdom" },
+  { quote: "Prevention is better than cure. Every wellness visit is an investment in someone's future.", author: "Healthcare Philosophy" },
+  { quote: "The spine is the lifeline. You are the guardian of that vital pathway.", author: "Chiropractic Insight" },
+  { quote: "Happiness is the highest form of health.", author: "Dalai Lama" },
+  { quote: "Your expertise transforms pain into possibility and limitation into liberation.", author: "Wellness Wisdom" },
+  { quote: "Health is not valued till sickness comes. You help people value it every day.", author: "Thomas Fuller" },
+  { quote: "Every patient interaction is an opportunity to inspire lasting wellness habits.", author: "Healthcare Philosophy" },
+  { quote: "The natural healing force within each of us is the greatest force in getting well.", author: "Hippocrates" },
+  { quote: "Your work today plants seeds of health that will bloom for years to come.", author: "Wellness Wisdom" },
+  { quote: "Physical fitness is the first requisite of happiness. You help people achieve both.", author: "Joseph Pilates" },
+  { quote: "Caring for the body is caring for the soul. Your work touches both.", author: "Healthcare Philosophy" },
+  { quote: "An ounce of prevention is worth a pound of cure. Your guidance is priceless.", author: "Benjamin Franklin" },
+  { quote: "You don't just treat symptoms—you restore quality of life.", author: "Chiropractic Insight" },
+  { quote: "Health is the crown on the well person's head that only the ill person can see.", author: "Robin Sharma" },
+  { quote: "Your compassion and skill combine to create healing that goes beyond the physical.", author: "Wellness Wisdom" },
+  { quote: "The groundwork for all happiness is good health.", author: "Leigh Hunt" },
+  { quote: "Today is another opportunity to help someone live their best, pain-free life.", author: "Healthcare Philosophy" },
+  { quote: "True healthcare is about empowering patients to take control of their own wellness.", author: "Wellness Wisdom" },
+]
 
-function DashboardView({ 
+function getDailyAspirationIndex(): number {
+  const today = new Date()
+  const startOfYear = new Date(today.getFullYear(), 0, 0)
+  const diff = today.getTime() - startOfYear.getTime()
+  const oneDay = 1000 * 60 * 60 * 24
+  const dayOfYear = Math.floor(diff / oneDay)
+  return dayOfYear % dailyAspirations.length
+}
+
+function DailyAspiration({ practiceColor }: { practiceColor: string }) {
+  const aspirationIndex = getDailyAspirationIndex()
+  const todaysAspiration = dailyAspirations[aspirationIndex]
+
+  return (
+    <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-4">
+          <div className={`p-3 bg-gradient-to-br ${practiceColor} rounded-full`}>
+            <Star className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-semibold text-amber-900 mb-2">Daily Aspiration</h3>
+            <p className="text-slate-700 italic text-base leading-relaxed">"{todaysAspiration.quote}"</p>
+            <p className="text-amber-600 font-medium mt-2 text-sm">— {todaysAspiration.author}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DashboardView({
   practiceType,
   practiceData,
   onNavigate, 
@@ -396,6 +459,9 @@ function DashboardView({
           </div>
         </CardContent>
       </Card>
+
+      {/* Daily Aspiration */}
+      <DailyAspiration practiceColor={practiceData.practiceColor} />
 
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
