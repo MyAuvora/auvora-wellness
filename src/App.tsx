@@ -2903,6 +2903,12 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle')
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [showQuickBooksPanel, setShowQuickBooksPanel] = useState(false)
+  
+  // Cancellation Policy Settings
+  const [cancellationHours, setCancellationHours] = useState('24')
+  const [cancellationFee, setCancellationFee] = useState('50')
+  const [cancellationAction, setCancellationAction] = useState<'fee' | 'credit' | 'both'>('fee')
+  const [cancellationPolicySaved, setCancellationPolicySaved] = useState(false)
 
   const handleConnectQuickBooks = () => {
     // Simulate OAuth flow
@@ -2912,16 +2918,21 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
     }, 1500)
   }
 
-  const handleSyncNow = () => {
-    setSyncStatus('syncing')
-    setTimeout(() => {
-      setSyncStatus('success')
-      setLastSync(new Date().toLocaleString())
-      setTimeout(() => setSyncStatus('idle'), 2000)
-    }, 2000)
-  }
+    const handleSyncNow = () => {
+      setSyncStatus('syncing')
+      setTimeout(() => {
+        setSyncStatus('success')
+        setLastSync(new Date().toLocaleString())
+        setTimeout(() => setSyncStatus('idle'), 2000)
+      }, 2000)
+    }
 
-  return (
+    const handleSaveCancellationPolicy = () => {
+      setCancellationPolicySaved(true)
+      setTimeout(() => setCancellationPolicySaved(false), 2000)
+    }
+
+    return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Practice Settings</h1>
@@ -3018,37 +3029,154 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Notification Settings</CardTitle>
-            <CardDescription>Configure alerts and reminders</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-              <div>
-                <p className="font-medium">Appointment Reminders</p>
-                <p className="text-sm text-slate-500">Send SMS/email reminders to patients</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-              <div>
-                <p className="font-medium">New Patient Alerts</p>
-                <p className="text-sm text-slate-500">Notify staff of new patient bookings</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-              <div>
-                <p className="font-medium">Daily Summary</p>
-                <p className="text-sm text-slate-500">Email daily schedule summary</p>
-              </div>
-              <Switch />
-            </div>
-          </CardContent>
-        </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Notification Settings</CardTitle>
+                    <CardDescription>Configure alerts and reminders</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">Appointment Reminders</p>
+                        <p className="text-sm text-slate-500">Send SMS/email reminders to patients</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">New Patient Alerts</p>
+                        <p className="text-sm text-slate-500">Notify staff of new patient bookings</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">Daily Summary</p>
+                        <p className="text-sm text-slate-500">Email daily schedule summary</p>
+                      </div>
+                      <Switch />
+                    </div>
+                  </CardContent>
+                </Card>
 
-        <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-orange-500" />
+                      Cancellation Policy
+                    </CardTitle>
+                    <CardDescription>Set rules for appointment cancellations and no-shows</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Cancellation Notice Required</label>
+                        <p className="text-xs text-slate-500 mb-2">Patients must cancel this many hours before their appointment</p>
+                        <select 
+                          className="w-full p-2 border rounded-lg bg-white"
+                          value={cancellationHours}
+                          onChange={(e) => setCancellationHours(e.target.value)}
+                        >
+                          <option value="12">12 hours</option>
+                          <option value="24">24 hours</option>
+                          <option value="48">48 hours</option>
+                          <option value="72">72 hours (3 days)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Late Cancellation Fee</label>
+                        <p className="text-xs text-slate-500 mb-2">Fee charged for cancellations within the notice period</p>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                          <input 
+                            type="number" 
+                            className="w-full p-2 pl-7 border rounded-lg" 
+                            value={cancellationFee}
+                            onChange={(e) => setCancellationFee(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+            
+                    <div>
+                      <label className="text-sm font-medium text-slate-700 mb-3 block">Cancellation Consequence</label>
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                          <input 
+                            type="radio" 
+                            name="cancellation-action" 
+                            checked={cancellationAction === 'fee'}
+                            onChange={() => setCancellationAction('fee')}
+                            className="w-4 h-4 text-teal-600"
+                          />
+                          <div>
+                            <p className="font-medium">Charge Cancellation Fee</p>
+                            <p className="text-sm text-slate-500">Patient will be charged ${cancellationFee} for late cancellations</p>
+                          </div>
+                        </label>
+                        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                          <input 
+                            type="radio" 
+                            name="cancellation-action" 
+                            checked={cancellationAction === 'credit'}
+                            onChange={() => setCancellationAction('credit')}
+                            className="w-4 h-4 text-teal-600"
+                          />
+                          <div>
+                            <p className="font-medium">Deduct Session Credit</p>
+                            <p className="text-sm text-slate-500">Patient loses one session from their package/membership</p>
+                          </div>
+                        </label>
+                        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                          <input 
+                            type="radio" 
+                            name="cancellation-action" 
+                            checked={cancellationAction === 'both'}
+                            onChange={() => setCancellationAction('both')}
+                            className="w-4 h-4 text-teal-600"
+                          />
+                          <div>
+                            <p className="font-medium">Patient Choice</p>
+                            <p className="text-sm text-slate-500">Patient can choose to pay fee OR lose session credit</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-amber-800">Policy Preview</p>
+                          <p className="text-sm text-amber-700 mt-1">
+                            Patients must cancel at least <strong>{cancellationHours} hours</strong> before their appointment. 
+                            Late cancellations or no-shows will result in {
+                              cancellationAction === 'fee' ? `a $${cancellationFee} fee` :
+                              cancellationAction === 'credit' ? 'loss of one session credit' :
+                              `a $${cancellationFee} fee or loss of one session credit (patient's choice)`
+                            }.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button 
+                      className={`bg-gradient-to-r ${practiceData.practiceColor}`}
+                      onClick={handleSaveCancellationPolicy}
+                    >
+                      {cancellationPolicySaved ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Policy Saved!
+                        </>
+                      ) : (
+                        'Save Cancellation Policy'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Integrations</CardTitle>
             <CardDescription>Connect with third-party services</CardDescription>
@@ -3277,12 +3405,24 @@ function PatientPortal({
   practiceData: ReturnType<typeof getPracticeData>
   onSwitchToProvider: () => void
 }) {
-  const [activeTab, setActiveTab] = useState<'home' | 'appointments' | 'messages' | 'records' | 'billing' | 'profile'>('home')
-  const [showMessageCompose, setShowMessageCompose] = useState(false)
-  const [messageText, setMessageText] = useState('')
-  const [showBookingModal, setShowBookingModal] = useState(false)
+    const [activeTab, setActiveTab] = useState<'home' | 'appointments' | 'messages' | 'records' | 'billing' | 'profile'>('home')
+    const [showMessageCompose, setShowMessageCompose] = useState(false)
+    const [messageText, setMessageText] = useState('')
+    const [showBookingModal, setShowBookingModal] = useState(false)
+  
+    // Additional modal states for functional buttons
+    const [showRescheduleModal, setShowRescheduleModal] = useState(false)
+    const [showCancelModal, setShowCancelModal] = useState(false)
+    const [showPaymentModal, setShowPaymentModal] = useState(false)
+    const [showAddPaymentModal, setShowAddPaymentModal] = useState(false)
+    const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+    const [showUpdateInsuranceModal, setShowUpdateInsuranceModal] = useState(false)
+    const [showRecordViewModal, setShowRecordViewModal] = useState(false)
+    const [selectedAppointment, setSelectedAppointment] = useState<{id: number, date: string, time: string, type: string} | null>(null)
+    const [selectedRecord, setSelectedRecord] = useState<{id: number, type: string, date: string, description: string} | null>(null)
+    const [actionSuccess, setActionSuccess] = useState<string | null>(null)
 
-  // Sample patient data
+    // Sample patient data
   const patientInfo = {
     name: 'John Doe',
     email: 'john.doe@email.com',
@@ -3419,15 +3559,31 @@ function PatientPortal({
                           <span className="text-sm text-slate-500">with {patientInfo.nextAppointment.provider}</span>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Button variant="outline" size="sm" className="text-xs">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          Reschedule
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50">
-                          Cancel
-                        </Button>
-                      </div>
+                                            <div className="flex flex-col gap-2">
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="text-xs"
+                                                onClick={() => {
+                                                  setSelectedAppointment({ id: 1, date: patientInfo.nextAppointment.date, time: patientInfo.nextAppointment.time, type: patientInfo.nextAppointment.type })
+                                                  setShowRescheduleModal(true)
+                                                }}
+                                              >
+                                                <Calendar className="w-3 h-3 mr-1" />
+                                                Reschedule
+                                              </Button>
+                                              <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                onClick={() => {
+                                                  setSelectedAppointment({ id: 1, date: patientInfo.nextAppointment.date, time: patientInfo.nextAppointment.time, type: patientInfo.nextAppointment.type })
+                                                  setShowCancelModal(true)
+                                                }}
+                                              >
+                                                Cancel
+                                              </Button>
+                                            </div>
                     </div>
                   </CardContent>
                 </div>
@@ -3570,14 +3726,30 @@ function PatientPortal({
                             <Badge className={apt.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
                               {apt.status}
                             </Badge>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Calendar className="w-4 h-4 text-slate-500" />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <X className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </div>
+                                                        <div className="flex gap-1">
+                                                          <Button 
+                                                            variant="ghost" 
+                                                            size="sm" 
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() => {
+                                                              setSelectedAppointment({ id: apt.id, date: apt.date, time: apt.time, type: apt.type })
+                                                              setShowRescheduleModal(true)
+                                                            }}
+                                                          >
+                                                            <Calendar className="w-4 h-4 text-slate-500" />
+                                                          </Button>
+                                                          <Button 
+                                                            variant="ghost" 
+                                                            size="sm" 
+                                                            className="h-8 w-8 p-0"
+                                                            onClick={() => {
+                                                              setSelectedAppointment({ id: apt.id, date: apt.date, time: apt.time, type: apt.type })
+                                                              setShowCancelModal(true)
+                                                            }}
+                                                          >
+                                                            <X className="w-4 h-4 text-red-500" />
+                                                          </Button>
+                                                        </div>
                           </div>
                         </div>
                       </CardContent>
@@ -3751,14 +3923,30 @@ function PatientPortal({
                           <p className="text-sm text-slate-600">{record.description}</p>
                           <p className="text-xs text-slate-400 mt-1">{record.date}</p>
                         </div>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
+                                                <div className="flex gap-2">
+                                                  <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="h-9 w-9 p-0"
+                                                    onClick={() => {
+                                                      setSelectedRecord({ id: record.id, type: record.type, date: record.date, description: record.description })
+                                                      setShowRecordViewModal(true)
+                                                    }}
+                                                  >
+                                                    <Eye className="w-4 h-4" />
+                                                  </Button>
+                                                  <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="h-9 w-9 p-0"
+                                                    onClick={() => {
+                                                      setActionSuccess('Download started for ' + record.type)
+                                                      setTimeout(() => setActionSuccess(null), 2000)
+                                                    }}
+                                                  >
+                                                    <Download className="w-4 h-4" />
+                                                  </Button>
+                                                </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -3772,7 +3960,15 @@ function PatientPortal({
                 <Download className="w-10 h-10 text-slate-400 mx-auto mb-3" />
                 <p className="font-semibold text-slate-700">Need a copy of your records?</p>
                 <p className="text-sm text-slate-500 mb-4">Request your complete health records</p>
-                <Button variant="outline">Request Records</Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setActionSuccess('Records request submitted. You will receive an email within 24 hours.')
+                    setTimeout(() => setActionSuccess(null), 3000)
+                  }}
+                >
+                  Request Records
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -3788,10 +3984,10 @@ function PatientPortal({
               <div className={`bg-gradient-to-r ${practiceData.practiceColor} p-6 text-white`}>
                 <p className="text-white/80 text-sm">Current Balance</p>
                 <p className="text-4xl font-bold mt-1">${patientInfo.balance.toFixed(2)}</p>
-                <Button className="mt-4 bg-white text-teal-600 hover:bg-white/90">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Pay Now
-                </Button>
+                                <Button className="mt-4 bg-white text-teal-600 hover:bg-white/90" onClick={() => setShowPaymentModal(true)}>
+                                  <DollarSign className="w-4 h-4 mr-2" />
+                                  Pay Now
+                                </Button>
               </div>
             </Card>
 
@@ -3813,10 +4009,10 @@ function PatientPortal({
                   </div>
                   <Badge className="bg-green-100 text-green-700">Default</Badge>
                 </div>
-                <Button variant="outline" className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Payment Method
-                </Button>
+                                <Button variant="outline" className="w-full" onClick={() => setShowAddPaymentModal(true)}>
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Add Payment Method
+                                </Button>
               </CardContent>
             </Card>
 
@@ -3866,7 +4062,7 @@ function PatientPortal({
                     <span className="font-medium">GRP-98765</span>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full mt-4">Update Insurance</Button>
+                <Button variant="outline" className="w-full mt-4" onClick={() => setShowUpdateInsuranceModal(true)}>Update Insurance</Button>
               </CardContent>
             </Card>
           </div>
@@ -3904,7 +4100,7 @@ function PatientPortal({
                   <span className="text-slate-500">Address</span>
                   <span className="font-medium text-right">{patientInfo.address}</span>
                 </div>
-                <Button variant="outline" className="w-full mt-2">Edit Profile</Button>
+                <Button variant="outline" className="w-full mt-2" onClick={() => setShowEditProfileModal(true)}>Edit Profile</Button>
               </CardContent>
             </Card>
 
@@ -3941,56 +4137,423 @@ function PatientPortal({
         )}
       </main>
 
-      {/* Booking Modal */}
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-bold">Book Appointment</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowBookingModal(false)}>
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-700">Appointment Type</label>
-                <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
-                  <option>Adjustment</option>
-                  <option>Wellness Visit</option>
-                  <option>Re-exam</option>
-                  <option>Consultation</option>
-                </select>
+            {/* Booking Modal */}
+            {showBookingModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="text-lg font-bold">Book Appointment</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowBookingModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Appointment Type</label>
+                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                        <option>Adjustment</option>
+                        <option>Wellness Visit</option>
+                        <option>Re-exam</option>
+                        <option>Consultation</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Provider</label>
+                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                        <option>Dr. Jamie Smith</option>
+                        <option>Dr. Sarah Chen</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Preferred Date</label>
+                      <input type="date" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Preferred Time</label>
+                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                        <option>Morning (8am - 12pm)</option>
+                        <option>Afternoon (12pm - 5pm)</option>
+                        <option>Any time</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`} 
+                      onClick={() => {
+                        setShowBookingModal(false)
+                        setActionSuccess('Appointment request submitted! We will contact you to confirm.')
+                        setTimeout(() => setActionSuccess(null), 3000)
+                      }}
+                    >
+                      Request Appointment
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700">Provider</label>
-                <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
-                  <option>Dr. Jamie Smith</option>
-                  <option>Dr. Sarah Chen</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700">Preferred Date</label>
-                <input type="date" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700">Preferred Time</label>
-                <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
-                  <option>Morning (8am - 12pm)</option>
-                  <option>Afternoon (12pm - 5pm)</option>
-                  <option>Any time</option>
-                </select>
-              </div>
-            </div>
-            <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
-              <Button className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`} onClick={() => setShowBookingModal(false)}>
-                Request Appointment
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
 
-      {/* Bottom Navigation - Redesigned */}
+            {/* Reschedule Modal */}
+            {showRescheduleModal && selectedAppointment && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="text-lg font-bold">Reschedule Appointment</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowRescheduleModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <p className="text-sm text-slate-500">Current Appointment</p>
+                      <p className="font-semibold text-slate-900">{selectedAppointment.type}</p>
+                      <p className="text-slate-600">{selectedAppointment.date} at {selectedAppointment.time}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">New Date</label>
+                      <input type="date" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">New Time</label>
+                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                        <option>9:00 AM</option>
+                        <option>10:00 AM</option>
+                        <option>11:00 AM</option>
+                        <option>2:00 PM</option>
+                        <option>3:00 PM</option>
+                        <option>4:00 PM</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}
+                      onClick={() => {
+                        setShowRescheduleModal(false)
+                        setActionSuccess('Reschedule request submitted! We will confirm your new time.')
+                        setTimeout(() => setActionSuccess(null), 3000)
+                      }}
+                    >
+                      Request Reschedule
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cancel Appointment Modal */}
+            {showCancelModal && selectedAppointment && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="text-lg font-bold">Cancel Appointment</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowCancelModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-sm text-red-600 font-medium">Cancellation Policy</p>
+                      <p className="text-sm text-red-700 mt-1">
+                        Cancellations within 24 hours of your appointment may result in a $50 cancellation fee or loss of session credit.
+                      </p>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <p className="text-sm text-slate-500">Appointment to Cancel</p>
+                      <p className="font-semibold text-slate-900">{selectedAppointment.type}</p>
+                      <p className="text-slate-600">{selectedAppointment.date} at {selectedAppointment.time}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Reason for Cancellation (optional)</label>
+                      <textarea className="w-full mt-1 p-3 border rounded-xl bg-slate-50 h-24 resize-none" placeholder="Let us know why you need to cancel..." />
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl flex gap-3">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowCancelModal(false)}>
+                      Keep Appointment
+                    </Button>
+                    <Button 
+                      className="flex-1 bg-red-600 hover:bg-red-700"
+                      onClick={() => {
+                        setShowCancelModal(false)
+                        setActionSuccess('Appointment cancelled. You will receive a confirmation email.')
+                        setTimeout(() => setActionSuccess(null), 3000)
+                      }}
+                    >
+                      Confirm Cancellation
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Modal */}
+            {showPaymentModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="text-lg font-bold">Make a Payment</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowPaymentModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className={`p-4 rounded-xl bg-gradient-to-r ${practiceData.practiceColor} text-white`}>
+                      <p className="text-white/80 text-sm">Amount Due</p>
+                      <p className="text-3xl font-bold">${patientInfo.balance.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Payment Amount</label>
+                      <div className="relative mt-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+                        <input type="number" className="w-full p-3 pl-7 border rounded-xl bg-slate-50" defaultValue={patientInfo.balance.toFixed(2)} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Payment Method</label>
+                      <div className="mt-2 p-4 bg-slate-50 rounded-xl flex items-center gap-4">
+                        <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-md flex items-center justify-center text-white text-xs font-bold">
+                          VISA
+                        </div>
+                        <div>
+                          <p className="font-medium">**** **** **** 4242</p>
+                          <p className="text-xs text-slate-500">Expires 12/27</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}
+                      onClick={() => {
+                        setShowPaymentModal(false)
+                        setActionSuccess('Payment of $' + patientInfo.balance.toFixed(2) + ' processed successfully!')
+                        setTimeout(() => setActionSuccess(null), 3000)
+                      }}
+                    >
+                      Pay ${patientInfo.balance.toFixed(2)}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add Payment Method Modal */}
+            {showAddPaymentModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="text-lg font-bold">Add Payment Method</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowAddPaymentModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Card Number</label>
+                      <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" placeholder="1234 5678 9012 3456" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Expiry Date</label>
+                        <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" placeholder="MM/YY" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">CVV</label>
+                        <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" placeholder="123" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Name on Card</label>
+                      <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" placeholder="John Doe" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" id="default-card" className="w-4 h-4" />
+                      <label htmlFor="default-card" className="text-sm text-slate-600">Set as default payment method</label>
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}
+                      onClick={() => {
+                        setShowAddPaymentModal(false)
+                        setActionSuccess('Payment method added successfully!')
+                        setTimeout(() => setActionSuccess(null), 3000)
+                      }}
+                    >
+                      Add Card
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Profile Modal */}
+            {showEditProfileModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
+                    <h3 className="text-lg font-bold">Edit Profile</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowEditProfileModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">First Name</label>
+                        <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue="John" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-700">Last Name</label>
+                        <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue="Doe" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Email</label>
+                      <input type="email" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue={patientInfo.email} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Phone</label>
+                      <input type="tel" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue={patientInfo.phone} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Date of Birth</label>
+                      <input type="date" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue="1985-03-15" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Address</label>
+                      <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue={patientInfo.address} />
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}
+                      onClick={() => {
+                        setShowEditProfileModal(false)
+                        setActionSuccess('Profile updated successfully!')
+                        setTimeout(() => setActionSuccess(null), 3000)
+                      }}
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Update Insurance Modal */}
+            {showUpdateInsuranceModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="text-lg font-bold">Update Insurance</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowUpdateInsuranceModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Insurance Provider</label>
+                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
+                        <option>Blue Cross Blue Shield</option>
+                        <option>Aetna</option>
+                        <option>Cigna</option>
+                        <option>UnitedHealthcare</option>
+                        <option>Humana</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Member ID</label>
+                      <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue="XYZ123456789" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Group Number</label>
+                      <input type="text" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" defaultValue="GRP-98765" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-700">Upload Insurance Card (optional)</label>
+                      <div className="mt-1 p-6 border-2 border-dashed border-slate-300 rounded-xl text-center">
+                        <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                        <p className="text-sm text-slate-500">Click to upload or drag and drop</p>
+                        <p className="text-xs text-slate-400 mt-1">PNG, JPG up to 10MB</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}
+                      onClick={() => {
+                        setShowUpdateInsuranceModal(false)
+                        setActionSuccess('Insurance information updated!')
+                        setTimeout(() => setActionSuccess(null), 3000)
+                      }}
+                    >
+                      Update Insurance
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* View Record Modal */}
+            {showRecordViewModal && selectedRecord && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <h3 className="text-lg font-bold">{selectedRecord.type}</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowRecordViewModal(false)}>
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                      <FileText className="w-10 h-10 text-teal-600" />
+                      <div>
+                        <p className="font-semibold text-slate-900">{selectedRecord.description}</p>
+                        <p className="text-sm text-slate-500">{selectedRecord.date}</p>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-slate-100 rounded-xl min-h-[200px]">
+                      <p className="text-sm text-slate-600 italic">
+                        {selectedRecord.type === 'SOAP Note' && 'Subjective: Patient reports improvement in lower back pain. Pain level 4/10.\n\nObjective: ROM improved. Decreased muscle tension in lumbar region.\n\nAssessment: Responding well to treatment.\n\nPlan: Continue weekly adjustments.'}
+                        {selectedRecord.type === 'X-Ray Report' && 'Lumbar spine series shows mild degenerative changes at L4-L5. No acute findings. Alignment within normal limits.'}
+                        {selectedRecord.type === 'Treatment Plan' && 'Initial treatment plan: 12 visits over 6 weeks. Focus on spinal adjustments, soft tissue therapy, and home exercises.'}
+                        {selectedRecord.type === 'Intake Forms' && 'Patient intake completed. Health history reviewed. No contraindications to chiropractic care.'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl flex gap-3">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowRecordViewModal(false)}>
+                      Close
+                    </Button>
+                    <Button 
+                      className={`flex-1 bg-gradient-to-r ${practiceData.practiceColor}`}
+                      onClick={() => {
+                        setActionSuccess('Download started for ' + selectedRecord.type)
+                        setTimeout(() => setActionSuccess(null), 2000)
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Success Toast */}
+            {actionSuccess && (
+              <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <p className="font-medium">{actionSuccess}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Navigation - Redesigned */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-4 py-2 z-50">
         <div className="max-w-md mx-auto flex items-center justify-around">
           {[
