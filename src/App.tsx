@@ -2905,11 +2905,29 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [showQuickBooksPanel, setShowQuickBooksPanel] = useState(false)
   
-  // Cancellation Policy Settings
-  const [cancellationHours, setCancellationHours] = useState('24')
-  const [cancellationFee, setCancellationFee] = useState('50')
-  const [cancellationAction, setCancellationAction] = useState<'fee' | 'credit' | 'both'>('fee')
-  const [cancellationPolicySaved, setCancellationPolicySaved] = useState(false)
+    // Cancellation Policy Settings
+    const [cancellationHours, setCancellationHours] = useState('24')
+    const [cancellationFee, setCancellationFee] = useState('50')
+    const [cancellationAction, setCancellationAction] = useState<'fee' | 'credit' | 'both'>('fee')
+    const [cancellationPolicySaved, setCancellationPolicySaved] = useState(false)
+  
+    // Business Hours Settings
+    const [businessHours, setBusinessHours] = useState<Record<string, { isOpen: boolean, open: string, close: string }>>({
+      'Monday': { isOpen: true, open: '08:00', close: '18:00' },
+      'Tuesday': { isOpen: true, open: '08:00', close: '18:00' },
+      'Wednesday': { isOpen: true, open: '08:00', close: '18:00' },
+      'Thursday': { isOpen: true, open: '08:00', close: '18:00' },
+      'Friday': { isOpen: true, open: '08:00', close: '18:00' },
+      'Saturday': { isOpen: false, open: '09:00', close: '14:00' },
+      'Sunday': { isOpen: false, open: '09:00', close: '14:00' },
+    })
+  
+    const updateBusinessHours = (day: string, field: 'isOpen' | 'open' | 'close', value: boolean | string) => {
+      setBusinessHours(prev => ({
+        ...prev,
+        [day]: { ...prev[day], [field]: value }
+      }))
+    }
 
   const handleConnectQuickBooks = () => {
     // Simulate OAuth flow
@@ -2969,32 +2987,51 @@ function PracticeSettingsView({ practiceData }: { practiceData: ReturnType<typeo
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Business Hours</CardTitle>
-            <CardDescription>Set your operating hours</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day) => (
-              <div key={day} className="flex items-center justify-between">
-                <span className="text-sm font-medium w-24">{day}</span>
-                <div className="flex items-center gap-2">
-                  <input type="time" className="p-1 border rounded text-sm" defaultValue="08:00" />
-                  <span>to</span>
-                  <input type="time" className="p-1 border rounded text-sm" defaultValue="18:00" />
-                </div>
-              </div>
-            ))}
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-sm font-medium w-24">Saturday</span>
-              <span className="text-sm">Closed</span>
-            </div>
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-sm font-medium w-24">Sunday</span>
-              <span className="text-sm">Closed</span>
-            </div>
-          </CardContent>
-        </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Business Hours</CardTitle>
+                    <CardDescription>Set your operating hours for each day of the week</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                      <div key={day} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => updateBusinessHours(day, 'isOpen', !businessHours[day].isOpen)}
+                            className={`w-10 h-5 rounded-full transition-colors relative ${
+                              businessHours[day].isOpen ? 'bg-teal-500' : 'bg-slate-300'
+                            }`}
+                          >
+                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                              businessHours[day].isOpen ? 'translate-x-5' : 'translate-x-0.5'
+                            }`} />
+                          </button>
+                          <span className={`text-sm font-medium w-20 ${!businessHours[day].isOpen ? 'text-slate-400' : ''}`}>{day}</span>
+                        </div>
+                        {businessHours[day].isOpen ? (
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="time" 
+                              className="p-1 border rounded text-sm" 
+                              value={businessHours[day].open}
+                              onChange={(e) => updateBusinessHours(day, 'open', e.target.value)}
+                            />
+                            <span className="text-slate-500">to</span>
+                            <input 
+                              type="time" 
+                              className="p-1 border rounded text-sm" 
+                              value={businessHours[day].close}
+                              onChange={(e) => updateBusinessHours(day, 'close', e.target.value)}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm text-slate-400 italic">Closed</span>
+                        )}
+                      </div>
+                    ))}
+                    <Button className={`w-full mt-4 bg-gradient-to-r ${practiceData.practiceColor}`}>Save Hours</Button>
+                  </CardContent>
+                </Card>
 
         <Card>
           <CardHeader>
