@@ -28,6 +28,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  ChevronLeft,
   TrendingUp,
   AlertCircle,
   Check,
@@ -3410,17 +3411,151 @@ function PatientPortal({
     const [messageText, setMessageText] = useState('')
     const [showBookingModal, setShowBookingModal] = useState(false)
   
-    // Additional modal states for functional buttons
-    const [showRescheduleModal, setShowRescheduleModal] = useState(false)
-    const [showCancelModal, setShowCancelModal] = useState(false)
-    const [showPaymentModal, setShowPaymentModal] = useState(false)
-    const [showAddPaymentModal, setShowAddPaymentModal] = useState(false)
-    const [showEditProfileModal, setShowEditProfileModal] = useState(false)
-    const [showUpdateInsuranceModal, setShowUpdateInsuranceModal] = useState(false)
-    const [showRecordViewModal, setShowRecordViewModal] = useState(false)
-    const [selectedAppointment, setSelectedAppointment] = useState<{id: number, date: string, time: string, type: string} | null>(null)
-    const [selectedRecord, setSelectedRecord] = useState<{id: number, type: string, date: string, description: string} | null>(null)
-    const [actionSuccess, setActionSuccess] = useState<string | null>(null)
+        // Additional modal states for functional buttons
+        const [showRescheduleModal, setShowRescheduleModal] = useState(false)
+        const [showCancelModal, setShowCancelModal] = useState(false)
+        const [showPaymentModal, setShowPaymentModal] = useState(false)
+        const [showAddPaymentModal, setShowAddPaymentModal] = useState(false)
+        const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+        const [showUpdateInsuranceModal, setShowUpdateInsuranceModal] = useState(false)
+        const [showRecordViewModal, setShowRecordViewModal] = useState(false)
+        const [selectedAppointment, setSelectedAppointment] = useState<{id: number, date: string, time: string, type: string} | null>(null)
+        const [selectedRecord, setSelectedRecord] = useState<{id: number, type: string, date: string, description: string} | null>(null)
+        const [actionSuccess, setActionSuccess] = useState<string | null>(null)
+    
+        // Booking modal state for live schedule
+        const [bookingStep, setBookingStep] = useState<'type' | 'schedule'>('type')
+        const [bookingType, setBookingType] = useState('Adjustment')
+        const [bookingProvider, setBookingProvider] = useState('Dr. Jamie Smith')
+        const [bookingDate, setBookingDate] = useState('')
+        const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
+    
+        // Provider schedules with available time slots
+        const providerSchedules: Record<string, Record<string, { time: string, available: boolean }[]>> = {
+          'Dr. Jamie Smith': {
+            '2026-02-10': [
+              { time: '9:00 AM', available: false },
+              { time: '9:30 AM', available: true },
+              { time: '10:00 AM', available: false },
+              { time: '10:30 AM', available: false },
+              { time: '11:00 AM', available: true },
+              { time: '11:30 AM', available: true },
+              { time: '2:00 PM', available: false },
+              { time: '2:30 PM', available: true },
+              { time: '3:00 PM', available: true },
+              { time: '3:30 PM', available: true },
+              { time: '4:00 PM', available: false },
+              { time: '4:30 PM', available: true },
+            ],
+            '2026-02-11': [
+              { time: '9:00 AM', available: true },
+              { time: '9:30 AM', available: true },
+              { time: '10:00 AM', available: true },
+              { time: '10:30 AM', available: false },
+              { time: '11:00 AM', available: true },
+              { time: '11:30 AM', available: false },
+              { time: '2:00 PM', available: true },
+              { time: '2:30 PM', available: true },
+              { time: '3:00 PM', available: false },
+              { time: '3:30 PM', available: true },
+              { time: '4:00 PM', available: true },
+              { time: '4:30 PM', available: true },
+            ],
+            '2026-02-12': [
+              { time: '9:00 AM', available: true },
+              { time: '9:30 AM', available: false },
+              { time: '10:00 AM', available: true },
+              { time: '10:30 AM', available: true },
+              { time: '11:00 AM', available: false },
+              { time: '11:30 AM', available: true },
+              { time: '2:00 PM', available: false },
+              { time: '2:30 PM', available: false },
+              { time: '3:00 PM', available: true },
+              { time: '3:30 PM', available: true },
+              { time: '4:00 PM', available: true },
+              { time: '4:30 PM', available: false },
+            ],
+          },
+          'Dr. Sarah Chen': {
+            '2026-02-10': [
+              { time: '9:00 AM', available: true },
+              { time: '9:30 AM', available: true },
+              { time: '10:00 AM', available: false },
+              { time: '10:30 AM', available: true },
+              { time: '11:00 AM', available: false },
+              { time: '11:30 AM', available: true },
+              { time: '2:00 PM', available: true },
+              { time: '2:30 PM', available: false },
+              { time: '3:00 PM', available: true },
+              { time: '3:30 PM', available: false },
+              { time: '4:00 PM', available: true },
+              { time: '4:30 PM', available: true },
+            ],
+            '2026-02-11': [
+              { time: '9:00 AM', available: false },
+              { time: '9:30 AM', available: true },
+              { time: '10:00 AM', available: true },
+              { time: '10:30 AM', available: true },
+              { time: '11:00 AM', available: true },
+              { time: '11:30 AM', available: false },
+              { time: '2:00 PM', available: false },
+              { time: '2:30 PM', available: true },
+              { time: '3:00 PM', available: true },
+              { time: '3:30 PM', available: true },
+              { time: '4:00 PM', available: false },
+              { time: '4:30 PM', available: true },
+            ],
+            '2026-02-12': [
+              { time: '9:00 AM', available: true },
+              { time: '9:30 AM', available: true },
+              { time: '10:00 AM', available: false },
+              { time: '10:30 AM', available: false },
+              { time: '11:00 AM', available: true },
+              { time: '11:30 AM', available: true },
+              { time: '2:00 PM', available: true },
+              { time: '2:30 PM', available: true },
+              { time: '3:00 PM', available: false },
+              { time: '3:30 PM', available: true },
+              { time: '4:00 PM', available: true },
+              { time: '4:30 PM', available: false },
+            ],
+          },
+        }
+    
+        // Get available dates for the next 7 days
+        const getAvailableDates = () => {
+          const dates = []
+          const today = new Date('2026-02-09')
+          for (let i = 1; i <= 7; i++) {
+            const date = new Date(today)
+            date.setDate(today.getDate() + i)
+            const dateStr = date.toISOString().split('T')[0]
+            dates.push({
+              date: dateStr,
+              dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+              dayNum: date.getDate(),
+              month: date.toLocaleDateString('en-US', { month: 'short' }),
+            })
+          }
+          return dates
+        }
+    
+        const availableDates = getAvailableDates()
+    
+        const getTimeSlotsForDate = () => {
+          if (!bookingDate || !bookingProvider) return []
+          const providerSchedule = providerSchedules[bookingProvider]
+          if (!providerSchedule) return []
+          return providerSchedule[bookingDate] || []
+        }
+    
+        const resetBookingModal = () => {
+          setBookingStep('type')
+          setBookingType('Adjustment')
+          setBookingProvider('Dr. Jamie Smith')
+          setBookingDate('')
+          setSelectedTimeSlot(null)
+        }
 
     // Sample patient data
   const patientInfo = {
@@ -4137,61 +4272,178 @@ function PatientPortal({
         )}
       </main>
 
-            {/* Booking Modal */}
-            {showBookingModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <h3 className="text-lg font-bold">Book Appointment</h3>
-                    <Button variant="ghost" size="sm" onClick={() => setShowBookingModal(false)}>
-                      <X className="w-5 h-5" />
-                    </Button>
-                  </div>
-                  <div className="p-4 space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-slate-700">Appointment Type</label>
-                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
-                        <option>Adjustment</option>
-                        <option>Wellness Visit</option>
-                        <option>Re-exam</option>
-                        <option>Consultation</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-700">Provider</label>
-                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
-                        <option>Dr. Jamie Smith</option>
-                        <option>Dr. Sarah Chen</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-700">Preferred Date</label>
-                      <input type="date" className="w-full mt-1 p-3 border rounded-xl bg-slate-50" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-700">Preferred Time</label>
-                      <select className="w-full mt-1 p-3 border rounded-xl bg-slate-50">
-                        <option>Morning (8am - 12pm)</option>
-                        <option>Afternoon (12pm - 5pm)</option>
-                        <option>Any time</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
-                    <Button 
-                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`} 
-                      onClick={() => {
-                        setShowBookingModal(false)
-                        setActionSuccess('Appointment request submitted! We will contact you to confirm.')
-                        setTimeout(() => setActionSuccess(null), 3000)
-                      }}
-                    >
-                      Request Appointment
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+                        {/* Booking Modal with Live Schedule */}
+                        {showBookingModal && (
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                              <div className="flex items-center justify-between p-4 border-b">
+                                <div className="flex items-center gap-3">
+                                  {bookingStep === 'schedule' && (
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setBookingStep('type')}>
+                                      <ChevronLeft className="w-5 h-5" />
+                                    </Button>
+                                  )}
+                                  <h3 className="text-lg font-bold">
+                                    {bookingStep === 'type' ? 'Book Appointment' : 'Select Time'}
+                                  </h3>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => { setShowBookingModal(false); resetBookingModal(); }}>
+                                  <X className="w-5 h-5" />
+                                </Button>
+                              </div>
+                  
+                              {bookingStep === 'type' ? (
+                                <>
+                                  <div className="p-4 space-y-4 overflow-y-auto">
+                                    <div>
+                                      <label className="text-sm font-medium text-slate-700">Appointment Type</label>
+                                      <select 
+                                        className="w-full mt-1 p-3 border rounded-xl bg-slate-50"
+                                        value={bookingType}
+                                        onChange={(e) => setBookingType(e.target.value)}
+                                      >
+                                        <option>Adjustment</option>
+                                        <option>Wellness Visit</option>
+                                        <option>Re-exam</option>
+                                        <option>Consultation</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="text-sm font-medium text-slate-700">Select Provider</label>
+                                      <div className="mt-2 space-y-2">
+                                        {['Dr. Jamie Smith', 'Dr. Sarah Chen'].map((provider) => (
+                                          <button
+                                            key={provider}
+                                            onClick={() => setBookingProvider(provider)}
+                                            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                                              bookingProvider === provider 
+                                                ? 'border-teal-500 bg-teal-50' 
+                                                : 'border-slate-200 hover:border-slate-300'
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${practiceData.practiceColor} flex items-center justify-center text-white font-bold`}>
+                                                {provider.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                              </div>
+                                              <div>
+                                                <p className="font-semibold text-slate-900">{provider}</p>
+                                                <p className="text-sm text-slate-500">
+                                                  {provider === 'Dr. Jamie Smith' ? 'Chiropractor, Owner' : 'Chiropractor'}
+                                                </p>
+                                              </div>
+                                              {bookingProvider === provider && (
+                                                <CheckCircle2 className="w-5 h-5 text-teal-600 ml-auto" />
+                                              )}
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                                    <Button 
+                                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}
+                                      onClick={() => setBookingStep('schedule')}
+                                    >
+                                      View {bookingProvider}'s Schedule
+                                      <ChevronRight className="w-4 h-4 ml-2" />
+                                    </Button>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="p-4 space-y-4 overflow-y-auto flex-1">
+                                    <div className="p-3 bg-slate-50 rounded-xl">
+                                      <p className="text-sm text-slate-500">Booking with</p>
+                                      <p className="font-semibold text-slate-900">{bookingProvider}</p>
+                                      <p className="text-sm text-teal-600">{bookingType}</p>
+                                    </div>
+                        
+                                    <div>
+                                      <label className="text-sm font-medium text-slate-700 mb-2 block">Select Date</label>
+                                      <div className="flex gap-2 overflow-x-auto pb-2">
+                                        {availableDates.map((d) => (
+                                          <button
+                                            key={d.date}
+                                            onClick={() => { setBookingDate(d.date); setSelectedTimeSlot(null); }}
+                                            className={`flex-shrink-0 w-16 p-2 rounded-xl border-2 text-center transition-all ${
+                                              bookingDate === d.date
+                                                ? 'border-teal-500 bg-teal-50'
+                                                : 'border-slate-200 hover:border-slate-300'
+                                            }`}
+                                          >
+                                            <p className="text-xs text-slate-500">{d.dayName}</p>
+                                            <p className="text-lg font-bold text-slate-900">{d.dayNum}</p>
+                                            <p className="text-xs text-slate-500">{d.month}</p>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                        
+                                    {bookingDate && (
+                                      <div>
+                                        <label className="text-sm font-medium text-slate-700 mb-2 block">Available Times</label>
+                                        {getTimeSlotsForDate().length > 0 ? (
+                                          <div className="grid grid-cols-3 gap-2">
+                                            {getTimeSlotsForDate().map((slot) => (
+                                              <button
+                                                key={slot.time}
+                                                onClick={() => slot.available && setSelectedTimeSlot(slot.time)}
+                                                disabled={!slot.available}
+                                                className={`p-3 rounded-xl border-2 text-center transition-all ${
+                                                  !slot.available
+                                                    ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed'
+                                                    : selectedTimeSlot === slot.time
+                                                    ? 'border-teal-500 bg-teal-50 text-teal-700'
+                                                    : 'border-slate-200 hover:border-teal-300 text-slate-700'
+                                                }`}
+                                              >
+                                                <p className="font-medium text-sm">{slot.time}</p>
+                                                {!slot.available && <p className="text-xs">Booked</p>}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="p-4 bg-slate-50 rounded-xl text-center">
+                                            <p className="text-slate-500">No availability on this date. Please select another date.</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                        
+                                    {selectedTimeSlot && (
+                                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                                        <div className="flex items-center gap-3">
+                                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                          <div>
+                                            <p className="font-medium text-green-800">Selected Appointment</p>
+                                            <p className="text-sm text-green-700">
+                                              {new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {selectedTimeSlot}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="p-4 border-t bg-slate-50 rounded-b-2xl">
+                                    <Button 
+                                      className={`w-full bg-gradient-to-r ${practiceData.practiceColor}`}
+                                      disabled={!selectedTimeSlot}
+                                      onClick={() => {
+                                        setShowBookingModal(false)
+                                        setActionSuccess(`Appointment booked with ${bookingProvider} on ${new Date(bookingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${selectedTimeSlot}!`)
+                                        setTimeout(() => setActionSuccess(null), 4000)
+                                        resetBookingModal()
+                                      }}
+                                    >
+                                      {selectedTimeSlot ? 'Confirm Booking' : 'Select a Time Slot'}
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
             {/* Reschedule Modal */}
             {showRescheduleModal && selectedAppointment && (
