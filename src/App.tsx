@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import { 
   Calendar, 
   Clock, 
@@ -60,7 +59,7 @@ import {
 } from 'lucide-react'
 
 type DemoView = 'dashboard' | 'scheduling' | 'patients' | 'patient' | 'billing' | 'analytics' | 'compliance' | 'ai-assistant' | 'communication' | 'staff-management' | 'practice-settings'
-type PracticeType = 'chiropractic' | 'physical-therapy'
+type PracticeType = 'chiropractic' | 'physical-therapy' | 'float-spa'
 type UserRole = 'provider' | 'patient'
 type StaffRole = 'owner' | 'doctor' | 'front-desk'
 
@@ -153,7 +152,7 @@ const getPracticeData = (type: PracticeType) => {
         plan: 'Spinal adjustment (lumbar and thoracic), soft tissue therapy. Follow-up in 1 week. Continue home exercises and stretches.',
       }
     }
-  } else {
+  } else if (type === 'physical-therapy') {
     return {
       practiceName: 'Restore Physical Therapy & Rehab',
       practiceColor: 'from-blue-500 to-indigo-600',
@@ -184,6 +183,38 @@ const getPracticeData = (type: PracticeType) => {
         plan: 'Continue therapeutic exercise progression, manual therapy, gait training. Advance HEP. Follow-up in 3 days. Re-eval scheduled for week 6.',
       }
     }
+  } else {
+    // Float Spa / Basic Wellness
+    return {
+      practiceName: 'TruRest Float Spa & Wellness',
+      practiceColor: 'from-indigo-500 to-purple-600',
+      visitTypes: ['Float Session', '60-Min Float', '90-Min Float', 'Couples Float', 'Massage', 'Infrared Sauna', 'Cryotherapy'],
+      samplePatients: [
+        { id: 1, name: 'Amanda Brooks', status: 'Member', visit: 'Monthly unlimited - Float today', avatar: 'AB', color: 'bg-indigo-500', condition: 'Stress relief', intakeComplete: true },
+        { id: 2, name: 'Tyler Reed', status: 'New Client', visit: 'First float experience', avatar: 'TR', color: 'bg-purple-500', condition: 'Anxiety management', intakeComplete: false },
+        { id: 3, name: 'Jessica Kim', status: 'Package', visit: '5-pack: 3 remaining', avatar: 'JK', color: 'bg-pink-500', condition: 'Athletic recovery', intakeComplete: true },
+        { id: 4, name: 'Marcus Hall', status: 'Walk-in', visit: 'Infrared sauna session', avatar: 'MH', color: 'bg-orange-500', condition: 'Muscle tension', intakeComplete: true },
+        { id: 5, name: 'Rachel Green', status: 'VIP Member', visit: 'Couples float booked', avatar: 'RG', color: 'bg-green-500', condition: 'Relaxation', intakeComplete: true },
+      ],
+      todayAppointments: [
+        { time: '10:00 AM', patient: 'Amanda Brooks', type: '90-Min Float', duration: '90 min', status: 'confirmed' },
+        { time: '11:00 AM', patient: 'Tyler Reed', type: 'First Float (60 min)', duration: '75 min', status: 'confirmed' },
+        { time: '1:00 PM', patient: 'Jessica Kim', type: '60-Min Float', duration: '60 min', status: 'confirmed' },
+        { time: '2:30 PM', patient: 'Marcus Hall', type: 'Infrared Sauna', duration: '45 min', status: 'pending' },
+        { time: '4:00 PM', patient: 'Rachel Green', type: 'Couples Float', duration: '90 min', status: 'confirmed' },
+      ],
+      billingCodes: [
+        { code: 'FLT60', desc: '60-Minute Float Session', amount: 79, verified: true },
+        { code: 'FLT90', desc: '90-Minute Float Session', amount: 99, verified: true },
+        { code: 'SAUNA', desc: 'Infrared Sauna Session', amount: 45, verified: true },
+      ],
+      soapNote: {
+        subjective: 'Client reports feeling relaxed and refreshed after float session.',
+        objective: 'Session completed without issues. Tank temperature and salinity within optimal range.',
+        assessment: 'Client had positive experience. Recommended for continued sessions.',
+        plan: 'Schedule follow-up session. Consider membership upgrade.',
+      }
+    }
   }
 }
 
@@ -203,14 +234,13 @@ function DemoApp() {
   const roleInfo = getRoleInfo(staffRole)
   const navItems = getRoleNavigation(staffRole)
 
-  const handlePracticeTypeChange = (checked: boolean) => {
-    const newType = checked ? 'physical-therapy' : 'chiropractic'
-    setPracticeType(newType)
-    const newData = getPracticeData(newType)
-    setSelectedPatient(newData.samplePatients[0])
-    setSoapApproved(false)
-    setClaimSubmitted(false)
-  }
+    const handlePracticeTypeChange = (newType: PracticeType) => {
+      setPracticeType(newType)
+      const newData = getPracticeData(newType)
+      setSelectedPatient(newData.samplePatients[0])
+      setSoapApproved(false)
+      setClaimSubmitted(false)
+    }
 
   const handleRoleChange = (newRole: StaffRole) => {
     setStaffRole(newRole)
@@ -244,17 +274,18 @@ function DemoApp() {
               </div>
             </div>
             
-            {/* Practice Type Toggle */}
-            <div className="flex items-center gap-3 ml-6 pl-6 border-l border-slate-200">
-              <Label htmlFor="practice-toggle" className="text-sm font-medium text-slate-700">
-                {practiceType === 'chiropractic' ? 'Chiropractic' : 'Physical Therapy'}
-              </Label>
-              <Switch 
-                id="practice-toggle" 
-                checked={practiceType === 'physical-therapy'}
-                onCheckedChange={handlePracticeTypeChange}
-              />
-            </div>
+                        {/* Practice Type Selector */}
+                        <div className="flex items-center gap-3 ml-6 pl-6 border-l border-slate-200">
+                          <select
+                            value={practiceType}
+                            onChange={(e) => handlePracticeTypeChange(e.target.value as PracticeType)}
+                            className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                          >
+                            <option value="chiropractic">Chiropractic</option>
+                            <option value="physical-therapy">Physical Therapy</option>
+                            <option value="float-spa">Float Spa / Wellness</option>
+                          </select>
+                        </div>
           </div>
                     <div className="flex items-center gap-4">
                       {/* Switch to Patient Portal Button */}
