@@ -2531,8 +2531,14 @@ function AIAssistantPanel({
   const [isTyping, setIsTyping] = useState(false)
   const [conversationHistory, setConversationHistory] = useState<{role: string, content: string}[]>([])
 
-  const callAIChat = async (message: string): Promise<string> => {
+  const callAIChat = async (message: string, currentHistory: {role: string, content: string}[]): Promise<string> => {
     try {
+      // Include the user's message in the history we send to the API
+      const updatedHistory = [
+        ...currentHistory,
+        { role: 'user', content: message }
+      ]
+      
       const response = await fetch(`${API_URL}/api/ai/chat`, {
         method: 'POST',
         headers: {
@@ -2540,7 +2546,7 @@ function AIAssistantPanel({
         },
         body: JSON.stringify({
           message,
-          conversation_history: conversationHistory
+          conversation_history: updatedHistory
         })
       })
       
@@ -2550,10 +2556,9 @@ function AIAssistantPanel({
       
       const data = await response.json()
       
-      // Update conversation history
-      setConversationHistory(prev => [
-        ...prev,
-        { role: 'user', content: message },
+      // Update conversation history with both user message and AI response
+      setConversationHistory([
+        ...updatedHistory,
         { role: 'assistant', content: data.response }
       ])
       
@@ -2597,10 +2602,12 @@ function AIAssistantPanel({
     }
     setChatMessages(prev => [...prev, userMessage])
     const messageToSend = inputValue
+    // Capture current history before async call to avoid stale closure
+    const currentHistory = [...conversationHistory]
     setInputValue('')
     setIsTyping(true)
     
-    const aiResponseText = await callAIChat(messageToSend)
+    const aiResponseText = await callAIChat(messageToSend, currentHistory)
     
     const aiResponse: ChatMessage = {
       id: chatMessages.length + 2,
@@ -2618,9 +2625,11 @@ function AIAssistantPanel({
       content: action
     }
     setChatMessages(prev => [...prev, userMessage])
+    // Capture current history before async call to avoid stale closure
+    const currentHistory = [...conversationHistory]
     setIsTyping(true)
     
-    const aiResponseText = await callAIChat(action)
+    const aiResponseText = await callAIChat(action, currentHistory)
     
     const aiResponse: ChatMessage = {
       id: chatMessages.length + 2,
